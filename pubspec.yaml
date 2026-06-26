@@ -1,0 +1,29 @@
+name: iot_protector
+description: Atsign-powered IoT device protection console and agents.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  at_auth: ^3.1.0
+  at_client: ^3.11.0
+  at_client_flutter: ^1.0.1
+  at_cli_commons: ^3.0.1
+  at_commons: ^5.0.0
+  at_utils: ^3.0.19
+  file_picker: ^11.0.2
+  path_provider: ^2.1.4
+  url_launcher: ^6.3.0
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
