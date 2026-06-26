@@ -194,7 +194,7 @@ class _Nav extends StatelessWidget {
           height: 8,
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.gray900,
+            color: AppColors.mist,
           ),
         ),
         const SizedBox(width: 10),
@@ -217,10 +217,10 @@ class _StatsGrid extends StatelessWidget {
   ];
 
   static const _shades = [
-    AppColors.gray900,
-    AppColors.gray800,
-    AppColors.gray700,
-    AppColors.gray600,
+    AppColors.fog,
+    AppColors.mist,
+    AppColors.steel,
+    AppColors.mist,
   ];
 
   @override
@@ -288,11 +288,11 @@ class _StepsList extends StatelessWidget {
   ];
 
   static const _shades = [
-    AppColors.gray900,
-    AppColors.gray800,
-    AppColors.gray700,
-    AppColors.gray600,
-    AppColors.gray500,
+    AppColors.fog,
+    AppColors.mist,
+    AppColors.steel,
+    AppColors.mist,
+    AppColors.fog,
   ];
 
   @override

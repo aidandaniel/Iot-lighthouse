@@ -14,8 +14,11 @@ class TelemetryMonitor extends ChangeNotifier {
   final _rng = math.Random();
   Timer? _timer;
   List<ProtectedDevice> _devices = const [];
+  final _underAttack = <String>{};
 
   static const historyLimit = 48;
+
+  bool isUnderAttack(String deviceId) => _underAttack.contains(deviceId);
 
   List<TelemetryReading> historyFor(String deviceId) =>
       List.unmodifiable(_history[deviceId] ?? const []);
@@ -53,6 +56,46 @@ class TelemetryMonitor extends ChangeNotifier {
     }
   }
 
+  /// Demo: spike telemetry to mimic an AI-driven signaling attack.
+  void simulateAttack(String deviceId) {
+    _underAttack.add(deviceId);
+    final now = DateTime.now().toUtc();
+    final spikes = <TelemetryReading>[
+      TelemetryReading(
+        deviceId: deviceId,
+        recordedAt: now.subtract(const Duration(seconds: 6)),
+        signalStrength: -74,
+        temperatureC: 49,
+        packetLossPercent: 18,
+        status: 'elevated',
+      ),
+      TelemetryReading(
+        deviceId: deviceId,
+        recordedAt: now.subtract(const Duration(seconds: 3)),
+        signalStrength: -82,
+        temperatureC: 54,
+        packetLossPercent: 28,
+        status: 'degraded',
+      ),
+      TelemetryReading(
+        deviceId: deviceId,
+        recordedAt: now,
+        signalStrength: -91,
+        temperatureC: 61,
+        packetLossPercent: 41,
+        status: 'under_attack',
+      ),
+    ];
+
+    final list = List<TelemetryReading>.from(_history[deviceId] ?? [])
+      ..addAll(spikes);
+    if (list.length > historyLimit) {
+      list.removeRange(0, list.length - historyLimit);
+    }
+    _history[deviceId] = list;
+    notifyListeners();
+  }
+
   void _seed(ProtectedDevice device) {
     final profile = _profileFor(device);
     final now = DateTime.now().toUtc();
@@ -84,24 +127,35 @@ class TelemetryMonitor extends ChangeNotifier {
       if (!_shouldStream(device)) continue;
       final profile = _profileFor(device);
       final prev = latestFor(device.id);
-      final signal = _jitter(
-        prev?.signalStrength ?? profile.signalBase,
-        profile.signalSwing,
-        -95,
-        -45,
-      );
-      final temp = _jitter(
-        prev?.temperatureC ?? profile.tempBase,
-        0.9,
-        28,
-        62,
-      );
-      final loss = _jitter(
-        prev?.packetLossPercent ?? profile.lossBase,
-        1.2,
-        0,
-        22,
-      ).clamp(0, 100).toDouble();
+      final loss = _underAttack.contains(device.id)
+          ? _jitter(
+              prev?.packetLossPercent ?? 35,
+              3,
+              22,
+              55,
+            ).clamp(0, 100).toDouble()
+          : _jitter(
+              prev?.packetLossPercent ?? profile.lossBase,
+              1.2,
+              0,
+              22,
+            ).clamp(0, 100).toDouble();
+      final signal = _underAttack.contains(device.id)
+          ? _jitter(prev?.signalStrength ?? -88, 2, -95, -78)
+          : _jitter(
+              prev?.signalStrength ?? profile.signalBase,
+              profile.signalSwing,
+              -95,
+              -45,
+            );
+      final temp = _underAttack.contains(device.id)
+          ? _jitter(prev?.temperatureC ?? 58, 1.5, 48, 68)
+          : _jitter(
+              prev?.temperatureC ?? profile.tempBase,
+              0.9,
+              28,
+              62,
+            );
 
       final reading = TelemetryReading(
         deviceId: device.id,
@@ -128,6 +182,7 @@ class TelemetryMonitor extends ChangeNotifier {
   }
 
   String _statusFor(ProtectedDevice device, double loss, double signal) {
+    if (_underAttack.contains(device.id)) return 'under_attack';
     if (device.protectionState == ProtectionState.isolated) return 'isolated';
     if (loss >= 15 || signal <= -78) return 'degraded';
     if (loss >= 8 || signal <= -70) return 'elevated';

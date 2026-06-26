@@ -223,7 +223,7 @@ class AppPanel extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
@@ -254,8 +254,8 @@ class OperatorChip extends StatelessWidget {
       margin: const EdgeInsets.only(right: 16),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.gray200,
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.gray100,
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: AppColors.border),
       ),
       child: Text(
@@ -317,24 +317,24 @@ class StatusPill extends StatelessWidget {
   Color get _fg {
     switch (tone) {
       case AppStatusTone.active:
-        return AppColors.gray900;
+        return AppColors.white;
       case AppStatusTone.idle:
-        return AppColors.gray600;
+        return AppColors.black;
       case AppStatusTone.warning:
-        return AppColors.gray800;
+        return AppColors.white;
       case AppStatusTone.muted:
-        return AppColors.gray500;
+        return AppColors.gray600;
     }
   }
 
   Color get _bg {
     switch (tone) {
       case AppStatusTone.active:
-        return AppColors.gray200;
+        return AppColors.cobalt;
       case AppStatusTone.idle:
         return AppColors.gray100;
       case AppStatusTone.warning:
-        return AppColors.gray300;
+        return AppColors.black;
       case AppStatusTone.muted:
         return AppColors.gray100;
     }
@@ -342,12 +342,13 @@ class StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: _bg,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: tone == AppStatusTone.warning ? AppColors.black : AppColors.border),
       ),
       child: Text(
         label,
@@ -386,7 +387,7 @@ class MonoBlock extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.gray100,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(4),
               border: Border.all(color: AppColors.border),
             ),
             child: SelectableText(
@@ -464,7 +465,7 @@ class PanelHeader extends StatelessWidget {
           height: 40,
           decoration: BoxDecoration(
             color: AppColors.gray100,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(4),
             border: Border.all(color: AppColors.border),
           ),
           child: Icon(icon, size: 20, color: AppColors.gray800),

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../models/device_models.dart';
 import '../services/at_auth_service.dart';
+import '../services/at_keys.dart';
 import '../services/encryption_demo.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_widgets.dart';
@@ -12,6 +13,8 @@ import 'device_traceability_screen.dart';
 import 'telemetry_widgets.dart';
 
 const _starterPackUrl = 'https://my.atsign.com/starterpack_app';
+
+const _attackDemoDeviceId = 'diameter-edge-001';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, required this.operatorAtSign});
@@ -142,7 +145,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ..addAll(_demoDevices);
       _proof = _encryptionDemo.proveTelemetryEncryption(
         fromAtSign: '@lyra6dj04_sp',
-        toAtSign: '@lyra6dj01_sp',
+        toAtSign: protectionServiceAtSign,
         deviceId: 'diameter-edge-001',
       );
       _monitor.start(_devices);
@@ -157,6 +160,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
           device: device,
           monitor: _monitor,
           alerts: _alerts,
+        ),
+      ),
+    );
+  }
+
+  void _simulateAttack(ProtectedDevice device) {
+    setState(() {
+      _monitor.simulateAttack(device.id);
+      for (var i = 0; i < _devices.length; i += 1) {
+        if (_devices[i].id == device.id) {
+          _devices[i] = _devices[i].copyWith(
+            protectionState: ProtectionState.isolated,
+          );
+        }
+      }
+      _monitor.syncDevices(_devices);
+      _syncDevicesFromMonitor();
+
+      final alreadyAlerted = _alerts.any((a) => a.deviceId == device.id);
+      if (!alreadyAlerted) {
+        _alerts.insert(
+          0,
+          SecurityAlert(
+            id: 'alert-attack-${device.id}',
+            deviceId: device.id,
+            severity: AlertSeverity.critical,
+            title: 'Simulated attack on ${device.id}',
+            assessment:
+                'Telemetry spiked: packet loss exceeded 40%, signal collapsed, '
+                'and routing anomalies match AI-assisted SS7/Diameter probing.',
+            recommendedFix:
+                'Device auto-isolated. Rotate credentials, inspect firmware, '
+                'and verify atSign protection keys.',
+            createdAt: DateTime.now().toUtc(),
+          ),
+        );
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${device.label} isolated — attack telemetry streaming.',
         ),
       ),
     );
@@ -214,7 +260,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onImport: _importDemoFleet,
     );
 
-    final summary = _SummaryRow(devices: _devices, alerts: _alerts);
+    // summary is now rendered directly in the column
 
     final proof = _proof == null
         ? null
@@ -240,6 +286,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onToggle: _toggle,
             onTrace: _openTraceability,
             onMonitor: _openTelemetry,
+            onSimulateAttack: _simulateAttack,
+            attackDemoDeviceId: _attackDemoDeviceId,
           );
 
     final alertsHeader = SectionHeader(
@@ -257,61 +305,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return AppPage(
       title: 'Console',
       actions: [OperatorChip(atSign: widget.operatorAtSign)],
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final wide = AppLayout.isWide(constraints.maxWidth);
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SummaryBar(devices: _devices, alerts: _alerts),
+          const SizedBox(height: 24),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final wide = AppLayout.isWide(constraints.maxWidth);
 
-          final setup = <Widget>[
-            const AppAccentRule(height: 2),
-            const SizedBox(height: 28),
-            activation,
-            const SizedBox(height: 16),
-            import,
-            const SizedBox(height: 16),
-            summary,
-            if (proof != null) ...[
-              const SizedBox(height: 16),
-              proof,
-            ],
-          ];
+                final left = <Widget>[
+                  assetsHeader,
+                  assetsBody,
+                ];
 
-          final fleet = <Widget>[
-            if (wide) const SizedBox(height: 30),
-            assetsHeader,
-            assetsBody,
-            const SizedBox(height: 32),
-            alertsHeader,
-            ...alertsBody,
-          ];
+                final right = <Widget>[
+                  const AppAccentRule(height: 2),
+                  const SizedBox(height: 28),
+                  activation,
+                  const SizedBox(height: 16),
+                  import,
+                  if (proof != null) ...[
+                    const SizedBox(height: 16),
+                    proof,
+                  ],
+                  const SizedBox(height: 32),
+                  alertsHeader,
+                  ...alertsBody,
+                ];
 
-          if (wide) {
-            return SingleChildScrollView(
-              child: ResponsiveColumns(
-                breakpoint: 1100,
-                gap: 32,
-                flex: const [5, 7],
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: setup,
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: fleet,
-                  ),
-                ],
-              ),
-            );
-          }
+                if (wide) {
+                  return SingleChildScrollView(
+                    child: ResponsiveColumns(
+                      breakpoint: 1100,
+                      gap: 32,
+                      flex: const [5, 4],
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: left,
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: right,
+                        ),
+                      ],
+                    ),
+                  );
+                }
 
-          return ListView(
-            children: [
-              ...setup,
-              const SizedBox(height: 32),
-              ...fleet,
-            ],
-          );
-        },
+                return ListView(
+                  children: [
+                    ...left,
+                    const SizedBox(height: 32),
+                    ...right,
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -528,8 +582,8 @@ class _ImportPanel extends StatelessWidget {
   }
 }
 
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.devices, required this.alerts});
+class _SummaryBar extends StatelessWidget {
+  const _SummaryBar({required this.devices, required this.alerts});
 
   final List<ProtectedDevice> devices;
   final List<SecurityAlert> alerts;
@@ -543,36 +597,49 @@ class _SummaryRow extends StatelessWidget {
         .where((d) => d.protectionState == ProtectionState.isolated)
         .length;
 
-    final tiles = [
-      MetricTile(label: 'Imported', value: devices.length.toString()),
-      MetricTile(label: 'Protected', value: protected.toString()),
-      MetricTile(label: 'Isolated', value: isolated.toString()),
-      MetricTile(label: 'Alerts', value: alerts.length.toString()),
-    ];
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _MiniMetric(label: 'Imported', value: devices.length.toString()),
+          _MiniMetric(label: 'Protected', value: protected.toString()),
+          _MiniMetric(label: 'Isolated', value: isolated.toString()),
+          _MiniMetric(label: 'Alerts', value: alerts.length.toString()),
+        ],
+      ),
+    );
+  }
+}
 
-    return LayoutBuilder(
-      builder: (context, c) {
-        final cols = AppLayout.gridColumns(c.maxWidth, maxColumns: 4);
-        const gap = 10.0;
-        if (cols >= 4) {
-          return Row(
-            children: [
-              for (var i = 0; i < tiles.length; i += 1) ...[
-                if (i > 0) const SizedBox(width: gap),
-                Expanded(child: tiles[i]),
-              ],
-            ],
-          );
-        }
-        final itemW = (c.maxWidth - gap * (cols - 1)) / cols;
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          children: tiles
-              .map((t) => SizedBox(width: itemW, child: t))
-              .toList(),
-        );
-      },
+class _MiniMetric extends StatelessWidget {
+  const _MiniMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: Theme.of(context).textTheme.labelSmall,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.cobalt,
+              ),
+        ),
+      ],
     );
   }
 }
@@ -584,6 +651,8 @@ class _DeviceGrid extends StatelessWidget {
     required this.onToggle,
     required this.onTrace,
     required this.onMonitor,
+    required this.onSimulateAttack,
+    required this.attackDemoDeviceId,
   });
 
   final List<ProtectedDevice> devices;
@@ -591,6 +660,8 @@ class _DeviceGrid extends StatelessWidget {
   final void Function(ProtectedDevice device, bool enabled) onToggle;
   final void Function(ProtectedDevice device) onTrace;
   final void Function(ProtectedDevice device) onMonitor;
+  final void Function(ProtectedDevice device) onSimulateAttack;
+  final String attackDemoDeviceId;
 
   @override
   Widget build(BuildContext context) {
@@ -610,6 +681,10 @@ class _DeviceGrid extends StatelessWidget {
                     onToggle: onToggle,
                     onTrace: () => onTrace(device),
                     onMonitor: () => onMonitor(device),
+                    onSimulateAttack: device.id == attackDemoDeviceId &&
+                            device.protectionState != ProtectionState.isolated
+                        ? () => onSimulateAttack(device)
+                        : null,
                   ),
                 ),
             ],
@@ -632,6 +707,10 @@ class _DeviceGrid extends StatelessWidget {
                   onToggle: onToggle,
                   onTrace: () => onTrace(device),
                   onMonitor: () => onMonitor(device),
+                  onSimulateAttack: device.id == attackDemoDeviceId &&
+                          device.protectionState != ProtectionState.isolated
+                      ? () => onSimulateAttack(device)
+                      : null,
                 ),
               ),
           ],
@@ -684,6 +763,7 @@ class _DeviceCard extends StatelessWidget {
     required this.onToggle,
     required this.onTrace,
     required this.onMonitor,
+    this.onSimulateAttack,
   });
 
   final ProtectedDevice device;
@@ -691,6 +771,7 @@ class _DeviceCard extends StatelessWidget {
   final void Function(ProtectedDevice device, bool enabled) onToggle;
   final VoidCallback onTrace;
   final VoidCallback onMonitor;
+  final VoidCallback? onSimulateAttack;
 
   @override
   Widget build(BuildContext context) {
@@ -698,87 +779,106 @@ class _DeviceCard extends StatelessWidget {
     final enabled = device.protectionState == ProtectionState.enabled;
     final reading = device.lastReading;
 
-    return AppPanel(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(device.label,
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 6),
-                    Text(
-                      device.id,
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                        color: AppColors.gray600,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      child: AppPanel(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(device.label,
+                          style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 6),
+                      Text(
+                        device.id,
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: AppColors.gray600,
+                        ),
                       ),
+                    ],
+                  ),
+                ),
+                StatusPill(
+                  label: protectionLabel(device.protectionState),
+                  tone: protectionTone(device.protectionState),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: TelemetryMiniStrip(
+                key: ValueKey('${reading?.status}_$live'),
+                reading: reading,
+                live: live,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Text(
+                  'Protection',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+                const Spacer(),
+                Switch(
+                  value: enabled,
+                  onChanged: isolated ? null : (v) => onToggle(device, v),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 4,
+              children: [
+                TextButton.icon(
+                  onPressed: onMonitor,
+                  icon: const Icon(Icons.monitor_heart_outlined, size: 18),
+                  label: const Text('Live monitor'),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    foregroundColor: AppColors.cobalt,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: onTrace,
+                  icon: const Icon(Icons.timeline, size: 18),
+                  label: const Text('Traceability'),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    foregroundColor: AppColors.black,
+                  ),
+                ),
+                if (onSimulateAttack != null)
+                  TextButton.icon(
+                    onPressed: onSimulateAttack,
+                    icon: const Icon(Icons.bolt_outlined, size: 18),
+                    label: const Text('Simulate attack'),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      foregroundColor: AppColors.cobalt,
                     ),
-                  ],
-                ),
-              ),
-              StatusPill(
-                label: protectionLabel(device.protectionState),
-                tone: protectionTone(device.protectionState),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          TelemetryMiniStrip(
-            reading: reading,
-            live: live,
-          ),
-          const SizedBox(height: 16),
-          const Divider(height: 1),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Text(
-                'Protection',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.text,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-              const Spacer(),
-              Switch(
-                value: enabled,
-                onChanged: isolated ? null : (v) => onToggle(device, v),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              TextButton.icon(
-                onPressed: onMonitor,
-                icon: const Icon(Icons.monitor_heart_outlined, size: 18),
-                label: const Text('Live monitor'),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  foregroundColor: AppColors.gray900,
-                ),
-              ),
-              const SizedBox(width: 16),
-              TextButton.icon(
-                onPressed: onTrace,
-                icon: const Icon(Icons.timeline, size: 18),
-                label: const Text('Traceability'),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  foregroundColor: AppColors.gray800,
-                ),
-              ),
-            ],
-          ),
-        ],
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

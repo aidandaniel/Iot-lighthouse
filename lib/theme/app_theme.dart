@@ -1,46 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Bootstrap gray scale — light surfaces, dark type.
+/// Clean, high-contrast light theme — white, black, and cobalt.
 abstract final class AppColors {
-  static const gray100 = Color(0xFFF8F9FA);
-  static const gray200 = Color(0xFFE9ECEF);
-  static const gray300 = Color(0xFFDEE2E6);
-  static const gray400 = Color(0xFFCED4DA);
-  static const gray500 = Color(0xFFADB5BD);
-  static const gray600 = Color(0xFF6C757D);
-  static const gray700 = Color(0xFF495057);
-  static const gray800 = Color(0xFF343A40);
-  static const gray900 = Color(0xFF212529);
+  static const white = Color(0xFFFFFFFF);
+  static const offWhite = Color(0xFFFAFAFA);
+  static const gray100 = Color(0xFFF4F4F5);
+  static const gray200 = Color(0xFFE4E4E7);
+  static const gray300 = Color(0xFFD4D4D8);
+  static const gray400 = Color(0xFFA1A1AA);
+  static const gray500 = Color(0xFF71717A);
+  static const gray600 = Color(0xFF52525B);
+  static const gray700 = Color(0xFF3F3F46);
+  static const gray800 = Color(0xFF27272A);
+  static const gray900 = Color(0xFF18181B);
+  static const black = Color(0xFF09090B);
 
-  static const background = gray100;
-  static const surface = Color(0xFFFFFFFF);
-  static const elevated = gray200;
-  static const border = gray300;
-  static const borderStrong = gray400;
-  static const muted = gray600;
-  static const textSecondary = gray700;
-  static const text = gray900;
+  static const cobalt = Color(0xFF0044FF);
+  static const cobaltLight = Color(0xFF00AAFF);
+
+  static const background = offWhite;
+  static const surface = white;
+  static const elevated = white;
+  static const border = gray200;
+  static const borderStrong = gray300;
+  static const muted = gray500;
+  static const textSecondary = gray600;
+  static const text = black;
 
   static const accentGradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [gray400, gray700, gray900],
+    colors: [cobalt, cobaltLight],
   );
+
+  /// Legacy aliases used across the app.
+  static const ink = black;
+  static const navy = white;
+  static const fog = black;
+  static const mist = cobalt;
+  static const steel = gray200;
+  static const void_ = black;
+  static const slate = white;
+  static const cream = black;
+  static const tan = cobalt;
+  static const brown = gray200;
 }
 
 ThemeData buildAppTheme() {
   const scheme = ColorScheme.light(
     brightness: Brightness.light,
-    primary: AppColors.gray900,
-    onPrimary: AppColors.gray100,
-    secondary: AppColors.gray700,
-    onSecondary: AppColors.gray100,
-    surface: AppColors.surface,
-    onSurface: AppColors.text,
-    error: AppColors.gray800,
-    onError: AppColors.gray100,
-    outline: AppColors.border,
+    primary: AppColors.cobalt,
+    onPrimary: AppColors.white,
+    secondary: AppColors.gray800,
+    onSecondary: AppColors.white,
+    surface: AppColors.white,
+    onSurface: AppColors.black,
+    error: AppColors.cobalt,
+    onError: AppColors.white,
+    outline: AppColors.gray200,
   );
 
   return ThemeData(
@@ -66,28 +84,28 @@ ThemeData buildAppTheme() {
       color: AppColors.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(4),
         side: const BorderSide(color: AppColors.border),
       ),
     ),
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) return AppColors.gray900;
-        return AppColors.gray500;
+        if (states.contains(WidgetState.selected)) return AppColors.white;
+        return AppColors.gray400;
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return AppColors.gray400;
+          return AppColors.cobalt;
         }
-        return AppColors.gray300;
+        return AppColors.gray200;
       }),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: AppColors.gray900,
-        foregroundColor: AppColors.gray100,
+        backgroundColor: AppColors.cobalt,
+        foregroundColor: AppColors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         textStyle: GoogleFonts.inter(
           fontSize: 14,
           fontWeight: FontWeight.w600,
@@ -96,10 +114,10 @@ ThemeData buildAppTheme() {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.textSecondary,
+        foregroundColor: AppColors.black,
         side: const BorderSide(color: AppColors.borderStrong),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         textStyle: GoogleFonts.inter(
           fontSize: 14,
           fontWeight: FontWeight.w500,
@@ -108,7 +126,7 @@ ThemeData buildAppTheme() {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.textSecondary,
+        foregroundColor: AppColors.cobalt,
         textStyle: GoogleFonts.inter(
           fontSize: 14,
           fontWeight: FontWeight.w500,
@@ -171,9 +189,12 @@ ThemeData buildAppTheme() {
       ),
     ),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: AppColors.gray900,
-      contentTextStyle: GoogleFonts.inter(color: AppColors.gray100),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      backgroundColor: AppColors.black,
+      contentTextStyle: GoogleFonts.inter(color: AppColors.white),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(4),
+        side: const BorderSide(color: AppColors.gray800),
+      ),
       behavior: SnackBarBehavior.floating,
     ),
   );

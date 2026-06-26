@@ -56,19 +56,22 @@ class _LivePulseState extends State<LivePulse>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.gray900.withValues(alpha: opacity),
+        Opacity(
+          opacity: opacity,
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: widget.active ? AppColors.cobalt : AppColors.gray400,
+            ),
           ),
         ),
         const SizedBox(width: 8),
         Text(
           widget.active ? 'LIVE' : 'PAUSED',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: widget.active ? AppColors.gray900 : AppColors.gray500,
+                color: widget.active ? AppColors.cobalt : AppColors.gray400,
               ),
         ),
       ],
@@ -326,7 +329,9 @@ class _MiniStat extends StatelessWidget {
 }
 
 AppStatusTone toneForReading(TelemetryReading reading) {
-  if (reading.status == 'isolated' || reading.status == 'degraded') {
+  if (reading.status == 'under_attack' ||
+      reading.status == 'isolated' ||
+      reading.status == 'degraded') {
     return AppStatusTone.warning;
   }
   if (reading.status == 'elevated') return AppStatusTone.idle;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/device_models.dart';
 import '../services/telemetry_monitor.dart';
+import '../services/at_keys.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_widgets.dart';
 import 'device_traceability_screen.dart';
@@ -115,7 +116,7 @@ class _DeviceTelemetryScreenState extends State<DeviceTelemetryScreen> {
                         ),
                         _HeaderField(
                           label: 'Route',
-                          value: '${device.deviceAtSign} → @lyra6dj02_sp',
+                          value: '${device.deviceAtSign} → $protectionServiceAtSign',
                         ),
                         if (latest != null)
                           _HeaderField(
