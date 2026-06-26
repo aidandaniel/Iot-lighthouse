@@ -11,12 +11,12 @@
         {
           "type": "person",
           "label": "Telecom Operator",
-          "notes": "A staff member who imports devices, views readings, toggles protection, and reviews traceability."
+          "notes": "A staff member who imports LTE gateways, POS terminals, smart meters, and field sensors; views readings; toggles protection; and reviews traceability."
         },
         {
           "type": "process",
           "label": "Security Management Console",
-          "notes": "Flutter app for onboarding, fleet overview, imports, protection toggles, traceability, and alerts."
+          "notes": "Flutter app for onboarding, telecom asset inventory, imports, protection toggles, traceability, and alerts."
         },
         {
           "type": "aiAgent",
@@ -26,7 +26,7 @@
         {
           "type": "thing",
           "label": "IoT Device",
-          "notes": "Connected field device with its own identity or managed key record."
+          "notes": "Connected telecom asset such as a 4G/LTE gateway, POS terminal, smart meter, or field sensor with its own identity or managed key record."
         },
         {
           "type": "other",

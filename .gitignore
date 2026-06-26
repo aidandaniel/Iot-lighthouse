@@ -27,6 +27,8 @@ migrate_working_dir/
 .env
 .env.*
 !.env.example
+*.atKeys
+key.properties
 secrets.json
 **/secrets.local.dart
 

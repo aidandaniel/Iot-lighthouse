@@ -85,7 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const ListTile(
                     leading: Icon(Icons.sensors_off),
                     title: Text('No devices imported yet'),
-                    subtitle: Text('Add devices manually or through the service import flow.'),
+                    subtitle: Text('Add LTE gateways, POS terminals, smart meters, or sensors.'),
                   ),
                 const SizedBox(height: 24),
                 Text('Security Alerts', style: Theme.of(context).textTheme.titleLarge),
@@ -213,6 +213,27 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
   final _id = TextEditingController();
   final _label = TextEditingController();
   final _atSign = TextEditingController();
+  String _assetType = 'LTE Gateway';
+
+  void _applyPreset(String type) {
+    setState(() {
+      _assetType = type;
+      switch (type) {
+        case 'POS Terminal':
+          _id.text = 'pos-terminal-001';
+          _label.text = 'POS Terminal - Retail Partner 001';
+        case 'Smart Meter':
+          _id.text = 'smart-meter-001';
+          _label.text = 'Smart Meter - District Node 001';
+        case 'Field Sensor':
+          _id.text = 'field-sensor-001';
+          _label.text = 'Field Sensor - Cabinet 001';
+        default:
+          _id.text = 'lte-gateway-001';
+          _label.text = 'LTE Gateway - Tower Sector A';
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -223,6 +244,19 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            DropdownButtonFormField<String>(
+              initialValue: _assetType,
+              decoration: const InputDecoration(labelText: 'Asset type'),
+              items: const [
+                DropdownMenuItem(value: 'LTE Gateway', child: Text('LTE Gateway')),
+                DropdownMenuItem(value: 'POS Terminal', child: Text('POS Terminal')),
+                DropdownMenuItem(value: 'Smart Meter', child: Text('Smart Meter')),
+                DropdownMenuItem(value: 'Field Sensor', child: Text('Field Sensor')),
+              ],
+              onChanged: (value) {
+                if (value != null) _applyPreset(value);
+              },
+            ),
             TextField(controller: _id, decoration: const InputDecoration(labelText: 'Device ID')),
             TextField(controller: _label, decoration: const InputDecoration(labelText: 'Label')),
             TextField(controller: _atSign, decoration: const InputDecoration(labelText: 'Device Atsign')),
@@ -240,7 +274,7 @@ class _AddDeviceDialogState extends State<_AddDeviceDialog> {
                 label: _label.text.trim(),
                 deviceAtSign: _atSign.text.trim(),
                 protectionState: ProtectionState.disabled,
-                source: 'manual',
+                source: 'manual:${_assetType.toLowerCase().replaceAll(' ', '-')}',
               ),
             );
           },
