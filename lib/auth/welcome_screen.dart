@@ -69,7 +69,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _Nav(onSignIn: _scrollToAuth),
-                    SizedBox(height: ultra ? 88 : wide ? 72 : 48),
+                    SizedBox(
+                        height: ultra
+                            ? 88
+                            : wide
+                                ? 72
+                                : 48),
                     if (ultra)
                       ResponsiveColumns(
                         breakpoint: 1200,
@@ -103,9 +108,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       style: theme.textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 24),
-                    const _StepsList(),
+                    const _HowItWorksPanel(),
                     SizedBox(height: wide ? 80 : 56),
-                    const _ProtocolRow(),
+                    _ProtocolRow(onPrimary: _scrollToAuth),
                     SizedBox(height: wide ? 80 : 56),
                     KeyedSubtree(
                       key: _authKey,
@@ -156,8 +161,8 @@ class _HeroCopy extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          'Assign an atSign to each Diameter and SS7 node. '
-          'Encrypt telemetry end to end — no central plaintext store.',
+          'Assign an atSign to any IoT device. '
+          'Encrypt your data transfer end to end.',
           style: theme.textTheme.bodyLarge,
         ),
         const SizedBox(height: 32),
@@ -210,17 +215,33 @@ class _StatsGrid extends StatelessWidget {
   const _StatsGrid();
 
   static const _stats = [
-    _Stat('60%', 'Breaches from unpatched firmware'),
-    _Stat('\$330K', 'Average incident cost'),
-    _Stat('89%', 'Rise in AI-driven attacks'),
-    _Stat('50%', 'Fewer attacks with updated firmware'),
+    _Stat(
+      '8.8B',
+      'Wireless connections',
+      'The total number of wireless connections globally. Nearly 6 billion people rely on these networks daily.',
+    ),
+    _Stat(
+      '\$7.6T',
+      'Economic impact',
+      'The mobile industry\'s contribution to global GDP. A systemic signaling failure threatens the core of the digital economy.',
+    ),
+    _Stat(
+      '1,000+',
+      'Trusted operators',
+      'SS7 and Diameter networks are accessed by over a thousand operators worldwide, relying on an outdated model of inherent trust.',
+    ),
+    _Stat(
+      '100%',
+      'Legacy SS7 surface',
+      'Every mobile network globally still relies on SS7 for international roaming, SMS routing, and 2G/3G fallback, with phase-out not expected until 2030-2035.',
+    ),
   ];
 
   static const _shades = [
-    AppColors.fog,
-    AppColors.mist,
-    AppColors.steel,
-    AppColors.mist,
+    AppColors.black,
+    AppColors.gray800,
+    AppColors.gray700,
+    AppColors.gray800,
   ];
 
   @override
@@ -258,7 +279,14 @@ class _StatsGrid extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(s.label, style: theme.textTheme.bodyMedium),
+                    Text(
+                      s.label,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(s.detail, style: theme.textTheme.bodySmall),
                   ],
                 ),
               ),
@@ -271,97 +299,35 @@ class _StatsGrid extends StatelessWidget {
 }
 
 class _Stat {
-  const _Stat(this.value, this.label);
+  const _Stat(this.value, this.label, this.detail);
   final String value;
   final String label;
+  final String detail;
 }
 
-class _StepsList extends StatelessWidget {
-  const _StepsList();
-
-  static const _steps = [
-    'Telecom company signs up and onboarded to the console',
-    'Import devices via .txt file or manual entry',
-    'Device records stored as encrypted AtKeys',
-    'Toggle atSign protection per device',
-    'View live telemetry and traceability map',
-  ];
-
-  static const _shades = [
-    AppColors.fog,
-    AppColors.mist,
-    AppColors.steel,
-    AppColors.mist,
-    AppColors.fog,
-  ];
+class _HowItWorksPanel extends StatelessWidget {
+  const _HowItWorksPanel();
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, c) {
-        final cols = AppLayout.gridColumns(c.maxWidth, maxColumns: 5);
-        if (cols > 1) {
-          const gap = 10.0;
-          final itemW = (c.maxWidth - gap * (cols - 1)) / cols;
-          return Wrap(
-            spacing: gap,
-            runSpacing: gap,
-            children: List.generate(_steps.length, (i) {
-              return SizedBox(
-                width: itemW,
-                child: _StepTile(index: i + 1, text: _steps[i], color: _shades[i]),
-              );
-            }),
-          );
-        }
-        return Column(
-          children: List.generate(
-            _steps.length,
-            (i) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _StepTile(index: i + 1, text: _steps[i], color: _shades[i]),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _StepTile extends StatelessWidget {
-  const _StepTile({
-    required this.index,
-    required this.text,
-    required this.color,
-  });
-
-  final int index;
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text('How it works', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 12),
           Text(
-            index.toString().padLeft(2, '0'),
-            style: TextStyle(
-              fontFamily: _mono,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
+            'IoT Lighthouse gives any IoT device an Atsign identity, then encrypts your data transfer end to end before it leaves the device or gateway. The operator can see the device, the payload stays private in transit, and only the authorized service or account can decrypt it.',
+            style: theme.textTheme.bodyMedium,
           ),
-          const SizedBox(height: 8),
-          Text(text, style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
     );
@@ -369,7 +335,9 @@ class _StepTile extends StatelessWidget {
 }
 
 class _ProtocolRow extends StatelessWidget {
-  const _ProtocolRow();
+  const _ProtocolRow({required this.onPrimary});
+
+  final VoidCallback onPrimary;
 
   @override
   Widget build(BuildContext context) {
@@ -379,123 +347,26 @@ class _ProtocolRow extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: AppColors.border),
       ),
-      child: LayoutBuilder(
-        builder: (context, c) {
-          final sideBySide = c.maxWidth >= 720;
-          if (!sideBySide) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const _ProtocolBar(
-                  label: 'Diameter · 4G/LTE',
-                  pct: 0.60,
-                  color: AppColors.gray800,
-                ),
-                const SizedBox(height: 16),
-                const _ProtocolBar(
-                  label: 'SS7 · 2G/3G',
-                  pct: 0.20,
-                  color: AppColors.gray600,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '65% faster breach breakout. Encrypted atSign channels '
-                  'close the gap legacy protocols leave open.',
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
-            );
-          }
-          return Row(
-            children: [
-              const Expanded(
-                child: _ProtocolBar(
-                  label: 'Diameter · 4G/LTE',
-                  pct: 0.60,
-                  color: AppColors.gray800,
-                ),
-              ),
-              const SizedBox(width: 24),
-              const Expanded(
-                child: _ProtocolBar(
-                  label: 'SS7 · 2G/3G',
-                  pct: 0.20,
-                  color: AppColors.gray600,
-                ),
-              ),
-              const SizedBox(width: 24),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Fleet coverage', style: theme.textTheme.titleLarge),
-                    const SizedBox(height: 8),
-                    Text(
-                      '65% faster breach breakout. Encrypted atSign channels '
-                      'close the gap legacy protocols leave open.',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _ProtocolBar extends StatelessWidget {
-  const _ProtocolBar({
-    required this.label,
-    required this.pct,
-    required this.color,
-  });
-
-  final String label;
-  final double pct;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.text,
-                  ),
-            ),
-            Text(
-              '${(pct * 100).round()}%',
-              style: TextStyle(
-                fontFamily: _mono,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: pct,
-            minHeight: 4,
-            backgroundColor: AppColors.gray300,
-            color: color,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Fleet coverage', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(
+            'Import the Diameter and SS7 demo fleet, assign atSign identities, and prove encrypted telemetry from device to company in one flow.',
+            style: theme.textTheme.bodyMedium,
           ),
-        ),
-      ],
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: onPrimary,
+            icon: const Icon(Icons.arrow_forward, size: 18),
+            label: const Text('Open console'),
+          ),
+        ],
+      ),
     );
   }
 }

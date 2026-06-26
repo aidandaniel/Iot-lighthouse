@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 
 import '../models/device_models.dart';
 import '../services/at_auth_service.dart';
-import '../services/at_keys.dart';
-import '../services/encryption_demo.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_widgets.dart';
 import '../services/telemetry_monitor.dart';
@@ -41,11 +39,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       createdAt: DateTime.now().toUtc(),
     ),
   ];
-  final _encryptionDemo = const EncryptionDemoService();
   final _monitor = TelemetryMonitor();
-  EncryptionProof? _proof;
   List<String> _keychainAtSigns = const [];
   bool _imported = false;
+  int _selectedTabIndex = 0;
 
   @override
   void initState() {
@@ -143,11 +140,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _devices
         ..clear()
         ..addAll(_demoDevices);
-      _proof = _encryptionDemo.proveTelemetryEncryption(
-        fromAtSign: '@lyra6dj04_sp',
-        toAtSign: protectionServiceAtSign,
-        deviceId: 'diameter-edge-001',
-      );
       _monitor.start(_devices);
       _syncDevicesFromMonitor();
     });
@@ -227,11 +219,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _devices[i] = _devices[i].copyWith(protectionState: state);
         }
       }
+      if (enabled) {
+        _monitor.stopAttack(device.id);
+      }
       if (_monitor.isRunning) {
         _monitor.syncDevices(_devices);
         _syncDevicesFromMonitor();
       }
     });
+  }
+
+  void _showAddDeviceDialog(
+      BuildContext context, Widget activation, Widget import) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        child: Container(
+          width: 500,
+          padding: const EdgeInsets.all(32),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Add Device',
+                        style: Theme.of(context).textTheme.headlineMedium),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                activation,
+                const SizedBox(height: 16),
+                import,
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -261,10 +294,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
 
     // summary is now rendered directly in the column
-
-    final proof = _proof == null
-        ? null
-        : _EncryptionProofCard(proof: _proof!);
 
     final assetsHeader = SectionHeader(
       title: 'Signaling assets',
@@ -302,70 +331,256 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
 
-    return AppPage(
-      title: 'Console',
-      actions: [OperatorChip(atSign: widget.operatorAtSign)],
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Scaffold(
+      body: Row(
         children: [
-          _SummaryBar(devices: _devices, alerts: _alerts),
-          const SizedBox(height: 24),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = AppLayout.isWide(constraints.maxWidth);
-
-                final left = <Widget>[
-                  assetsHeader,
-                  assetsBody,
-                ];
-
-                final right = <Widget>[
-                  const AppAccentRule(height: 2),
-                  const SizedBox(height: 28),
-                  activation,
-                  const SizedBox(height: 16),
-                  import,
-                  if (proof != null) ...[
-                    const SizedBox(height: 16),
-                    proof,
-                  ],
-                  const SizedBox(height: 32),
-                  alertsHeader,
-                  ...alertsBody,
-                ];
-
-                if (wide) {
-                  return SingleChildScrollView(
-                    child: ResponsiveColumns(
-                      breakpoint: 1100,
-                      gap: 32,
-                      flex: const [5, 4],
+          // Sidebar
+          Container(
+            width: 240,
+            decoration: const BoxDecoration(
+              color: AppColors.gray100,
+              border: Border(right: BorderSide(color: AppColors.border)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: OperatorChip(atSign: widget.operatorAtSign),
+                ),
+                const SizedBox(height: 16),
+                _SidebarItem(
+                  icon: Icons.devices_outlined,
+                  label: 'Devices',
+                  selected: _selectedTabIndex == 0,
+                  onTap: () => setState(() => _selectedTabIndex = 0),
+                ),
+                _SidebarItem(
+                  icon: Icons.list_alt_outlined,
+                  label: 'Logging',
+                  selected: _selectedTabIndex == 1,
+                  onTap: () => setState(() => _selectedTabIndex = 1),
+                ),
+              ],
+            ),
+          ),
+          // Main content
+          if (_selectedTabIndex == 0)
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Devices Pane
+                  Expanded(
+                    flex: 5,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: left,
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: right,
+                        _SummaryBar(devices: _devices, alerts: _alerts),
+                        Expanded(
+                          child: ListView(
+                            padding: const EdgeInsets.all(32),
+                            children: [
+                              assetsHeader,
+                              assetsBody,
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  );
-                }
-
-                return ListView(
-                  children: [
-                    ...left,
-                    const SizedBox(height: 32),
-                    ...right,
-                  ],
-                );
-              },
+                  ),
+                  // Right Pane
+                  Container(
+                    width: 360,
+                    decoration: const BoxDecoration(
+                      border: Border(left: BorderSide(color: AppColors.border)),
+                    ),
+                    child: ListView(
+                      padding: const EdgeInsets.all(32),
+                      children: [
+                        FilledButton.icon(
+                          onPressed: () =>
+                              _showAddDeviceDialog(context, activation, import),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Add Device'),
+                        ),
+                        if (_devices.isNotEmpty) ...[
+                          const SizedBox(height: 32),
+                          alertsHeader,
+                          ...alertsBody,
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Expanded(
+              child: _LoggingPane(devices: _devices),
             ),
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class _LoggingPane extends StatefulWidget {
+  const _LoggingPane({required this.devices});
+
+  final List<ProtectedDevice> devices;
+
+  @override
+  State<_LoggingPane> createState() => _LoggingPaneState();
+}
+
+class _LoggingPaneState extends State<_LoggingPane> {
+  String? _selectedDeviceId;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.devices.isEmpty) {
+      return const Center(
+        child: EmptyPanel(
+          icon: Icons.folder_open,
+          title: 'No logs available',
+          detail: 'Import devices to view their logs.',
+        ),
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Folders list
+        Container(
+          width: 300,
+          decoration: const BoxDecoration(
+            border: Border(right: BorderSide(color: AppColors.border)),
+          ),
+          child: ListView.builder(
+            itemCount: widget.devices.length,
+            itemBuilder: (context, index) {
+              final device = widget.devices[index];
+              final isSelected = device.id == _selectedDeviceId;
+              return ListTile(
+                leading: Icon(
+                  isSelected ? Icons.folder_open : Icons.folder,
+                  color: isSelected ? AppColors.black : AppColors.gray500,
+                ),
+                title: Text(
+                  device.id,
+                  style: TextStyle(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    color: isSelected ? AppColors.black : AppColors.gray800,
+                  ),
+                ),
+                selected: isSelected,
+                selectedTileColor: AppColors.gray100,
+                onTap: () => setState(() => _selectedDeviceId = device.id),
+              );
+            },
+          ),
+        ),
+        // Files list
+        Expanded(
+          child: _selectedDeviceId == null
+              ? const Center(
+                  child: Text(
+                    'Select a device folder to view logs',
+                    style: TextStyle(color: AppColors.gray500),
+                  ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    Text(
+                      'Logs for $_selectedDeviceId',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 24),
+                    _LogFileRow(
+                        filename: '${_selectedDeviceId}_syslog_2026-06-26.log',
+                        size: '2.4 MB',
+                        date: 'Today, 10:42 AM'),
+                    _LogFileRow(
+                        filename: '${_selectedDeviceId}_auth_2026-06-26.log',
+                        size: '1.1 MB',
+                        date: 'Today, 08:15 AM'),
+                    _LogFileRow(
+                        filename: '${_selectedDeviceId}_telemetry_2026-06-25.log',
+                        size: '8.7 MB',
+                        date: 'Yesterday, 11:59 PM'),
+                    _LogFileRow(
+                        filename: '${_selectedDeviceId}_syslog_2026-06-25.log',
+                        size: '4.2 MB',
+                        date: 'Yesterday, 11:59 PM'),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LogFileRow extends StatelessWidget {
+  const _LogFileRow({
+    required this.filename,
+    required this.size,
+    required this.date,
+  });
+
+  final String filename;
+  final String size;
+  final String date;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: const Icon(Icons.insert_drive_file_outlined, color: AppColors.gray600),
+        title: Text(filename, style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
+        subtitle: Text(date),
+        trailing: Text(size, style: const TextStyle(color: AppColors.gray500)),
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Downloading $filename...')),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SidebarItem extends StatelessWidget {
+  const _SidebarItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: selected ? AppColors.gray200 : Colors.transparent,
+      child: ListTile(
+        leading:
+            Icon(icon, color: selected ? AppColors.black : AppColors.gray600),
+        title: Text(
+          label,
+          style: TextStyle(
+            color: selected ? AppColors.black : AppColors.gray600,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
+        onTap: onTap,
       ),
     );
   }
@@ -636,7 +851,7 @@ class _MiniMetric extends StatelessWidget {
         Text(
           value,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: AppColors.cobalt,
+                color: AppColors.emerald,
               ),
         ),
       ],
@@ -707,8 +922,7 @@ class _DeviceGrid extends StatelessWidget {
                   onToggle: onToggle,
                   onTrace: () => onTrace(device),
                   onMonitor: () => onMonitor(device),
-                  onSimulateAttack: device.id == attackDemoDeviceId &&
-                          device.protectionState != ProtectionState.isolated
+                  onSimulateAttack: device.id == attackDemoDeviceId
                       ? () => onSimulateAttack(device)
                       : null,
                 ),
@@ -716,42 +930,6 @@ class _DeviceGrid extends StatelessWidget {
           ],
         );
       },
-    );
-  }
-}
-
-class _EncryptionProofCard extends StatelessWidget {
-  const _EncryptionProofCard({required this.proof});
-
-  final EncryptionProof proof;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppPanel(
-      accent: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          PanelHeader(
-            icon:
-                proof.verified ? Icons.lock_outline : Icons.lock_open_outlined,
-            title: 'Encryption proof',
-            subtitle:
-                'Synthetic telemetry route ${proof.fromAtSign} → ${proof.toAtSign}',
-          ),
-          MonoBlock(label: 'Plain telemetry', value: proof.plaintext),
-          MonoBlock(label: 'Encrypted payload', value: proof.ciphertext),
-          MonoBlock(label: 'HMAC digest', value: proof.digest),
-          MonoBlock(label: 'Decrypted by service', value: proof.decrypted),
-          const SizedBox(height: 14),
-          StatusPill(
-            label: proof.verified
-                ? 'Verified — route key matches'
-                : 'Verification failed',
-            tone: proof.verified ? AppStatusTone.active : AppStatusTone.warning,
-          ),
-        ],
-      ),
     );
   }
 }
@@ -775,7 +953,6 @@ class _DeviceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isolated = device.protectionState == ProtectionState.isolated;
     final enabled = device.protectionState == ProtectionState.enabled;
     final reading = device.lastReading;
 
@@ -838,7 +1015,7 @@ class _DeviceCard extends StatelessWidget {
                 const Spacer(),
                 Switch(
                   value: enabled,
-                  onChanged: isolated ? null : (v) => onToggle(device, v),
+                  onChanged: (v) => onToggle(device, v),
                 ),
               ],
             ),
@@ -847,13 +1024,24 @@ class _DeviceCard extends StatelessWidget {
               spacing: 12,
               runSpacing: 4,
               children: [
+                if (onSimulateAttack != null)
+                  TextButton.icon(
+                    onPressed: device.protectionState == ProtectionState.isolated ? null : onSimulateAttack,
+                    icon: const Icon(Icons.bolt_outlined, size: 18),
+                    label: Text(device.protectionState == ProtectionState.isolated ? 'Attack' : 'Simulate'),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      foregroundColor: AppColors.emerald,
+                      disabledForegroundColor: AppColors.ruby,
+                    ),
+                  ),
                 TextButton.icon(
                   onPressed: onMonitor,
                   icon: const Icon(Icons.monitor_heart_outlined, size: 18),
                   label: const Text('Live monitor'),
                   style: TextButton.styleFrom(
                     padding: EdgeInsets.zero,
-                    foregroundColor: AppColors.cobalt,
+                    foregroundColor: AppColors.emerald,
                   ),
                 ),
                 TextButton.icon(
@@ -865,16 +1053,6 @@ class _DeviceCard extends StatelessWidget {
                     foregroundColor: AppColors.black,
                   ),
                 ),
-                if (onSimulateAttack != null)
-                  TextButton.icon(
-                    onPressed: onSimulateAttack,
-                    icon: const Icon(Icons.bolt_outlined, size: 18),
-                    label: const Text('Simulate attack'),
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      foregroundColor: AppColors.cobalt,
-                    ),
-                  ),
               ],
             ),
           ],
@@ -942,7 +1120,7 @@ List<ProtectedDevice> get _demoDevices => [
         id: 'diameter-edge-001',
         label: 'Diameter Edge Router - Core Site A',
         deviceAtSign: '@lyra6dj04_sp',
-        protectionState: ProtectionState.enabled,
+        protectionState: ProtectionState.disabled,
         source: 'demo-import:diameter-node',
         firmwareVersion: '2.4.1',
         protocol: 'diameter',
@@ -987,7 +1165,7 @@ List<ProtectedDevice> get _demoDevices => [
         id: 'routing-firewall-001',
         label: 'Signaling Firewall - Interconnect 001',
         deviceAtSign: '@lyra6dj07_sp',
-        protectionState: ProtectionState.isolated,
+        protectionState: ProtectionState.enabled,
         source: 'demo-import:signaling-firewall',
         firmwareVersion: '3.1.0',
         protocol: 'ss7-firewall',

@@ -96,6 +96,12 @@ class TelemetryMonitor extends ChangeNotifier {
     notifyListeners();
   }
 
+  void stopAttack(String deviceId) {
+    if (_underAttack.remove(deviceId)) {
+      notifyListeners();
+    }
+  }
+
   void _seed(ProtectedDevice device) {
     final profile = _profileFor(device);
     final now = DateTime.now().toUtc();

@@ -28,6 +28,7 @@ migrate_working_dir/
 .env.*
 !.env.example
 *.atKeys
+local_keys/
 key.properties
 secrets.json
 **/secrets.local.dart
@@ -42,6 +43,7 @@ secrets.json
 /build/
 /coverage/
 .tools/
+.runtime/
 
 # Symbolication related
 app.*.symbols

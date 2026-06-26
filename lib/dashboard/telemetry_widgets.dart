@@ -63,7 +63,7 @@ class _LivePulseState extends State<LivePulse>
             height: 8,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: widget.active ? AppColors.cobalt : AppColors.gray400,
+              color: widget.active ? AppColors.emerald : AppColors.gray400,
             ),
           ),
         ),
@@ -71,7 +71,7 @@ class _LivePulseState extends State<LivePulse>
         Text(
           widget.active ? 'LIVE' : 'PAUSED',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: widget.active ? AppColors.cobalt : AppColors.gray400,
+                color: widget.active ? AppColors.emerald : AppColors.gray400,
               ),
         ),
       ],
@@ -84,7 +84,7 @@ class Sparkline extends StatelessWidget {
     super.key,
     required this.values,
     this.height = 44,
-    this.strokeColor = AppColors.gray800,
+    this.strokeColor = AppColors.emerald,
     this.fillColor,
   });
 
@@ -193,13 +193,13 @@ class TelemetryMetricCard extends StatelessWidget {
   Color get _accent {
     switch (tone) {
       case AppStatusTone.active:
-        return AppColors.gray900;
+        return AppColors.emerald;
       case AppStatusTone.idle:
         return AppColors.gray500;
       case AppStatusTone.warning:
-        return AppColors.gray800;
+        return AppColors.ruby;
       case AppStatusTone.muted:
-        return AppColors.gray600;
+        return AppColors.gray400;
     }
   }
 
@@ -209,7 +209,7 @@ class TelemetryMetricCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
@@ -254,7 +254,7 @@ class TelemetryMiniStrip extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.gray100,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(4),
           border: Border.all(color: AppColors.border),
         ),
         child: Text(
@@ -269,7 +269,7 @@ class TelemetryMiniStrip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.gray100,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(

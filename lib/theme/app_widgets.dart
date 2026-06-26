@@ -319,24 +319,24 @@ class StatusPill extends StatelessWidget {
       case AppStatusTone.active:
         return AppColors.white;
       case AppStatusTone.idle:
-        return AppColors.black;
+        return AppColors.white;
       case AppStatusTone.warning:
         return AppColors.white;
       case AppStatusTone.muted:
-        return AppColors.gray600;
+        return AppColors.black;
     }
   }
 
   Color get _bg {
     switch (tone) {
       case AppStatusTone.active:
-        return AppColors.cobalt;
+        return AppColors.emerald;
       case AppStatusTone.idle:
-        return AppColors.gray100;
+        return AppColors.gray400;
       case AppStatusTone.warning:
-        return AppColors.black;
+        return AppColors.ruby;
       case AppStatusTone.muted:
-        return AppColors.gray100;
+        return AppColors.gray200;
     }
   }
 
@@ -348,7 +348,7 @@ class StatusPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: _bg,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: tone == AppStatusTone.warning ? AppColors.black : AppColors.border),
+        border: Border.all(color: _bg),
       ),
       child: Text(
         label,
