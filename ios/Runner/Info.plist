@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Iot Protector</string>
+	<string>IoT Lighthouse</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>iot_protector</string>
+	<string>IoT Lighthouse</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -27,11 +27,11 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSDocumentsFolderUsageDescription</key>
-	<string>IoT Protector imports device lists and exports Atsign key backups selected by you.</string>
+	<string>IoT Lighthouse imports device lists and exports Atsign key backups selected by you.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>IoT Protector connects to Atsign services and trusted devices on your network.</string>
+	<string>IoT Lighthouse connects to Atsign services and trusted devices on your network.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>IoT Protector can access files you choose for import or key restoration.</string>
+	<string>IoT Lighthouse can access files you choose for import or key restoration.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

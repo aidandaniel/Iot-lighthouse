@@ -1,6 +1,6 @@
-# IoT Protector
+# IoT Lighthouse
 
-IoT Protector is an Atsign Platform application for telecom teams managing protected connected assets across LTE/4G gateways, POS terminals, smart meters, and field sensors. It includes a Flutter Security Management Console plus Dart agents for the Device Protection Service, Threat Monitor, and an IoT device simulator.
+IoT Lighthouse is an Atsign Platform application for telecom teams managing protected connected assets across LTE/4G gateways, POS terminals, smart meters, and field sensors. It includes a Flutter Security Management Console plus Dart agents for the Device Protection Service, Threat Monitor, and an IoT device simulator.
 
 ## Nodes And Atsigns
 
@@ -8,7 +8,7 @@ IoT Protector is an Atsign Platform application for telecom teams managing prote
 | --- | --- | --- | --- |
 | Telecom Company | AtKeys | Operator-owned Atsign namespace | Company profile, subscription state, and protected asset classes live as encrypted AtKeys. |
 | Telecom Operator | Flutter app user | `@lyra6dj01_sp` | Authenticates with keychain, registrar onboarding, APKAM, or `.atKeys`; manages LTE gateways, POS terminals, smart meters, and sensors. |
-| Security Management Console | Flutter | Operator Atsign using namespace `iotprotector` | Imports telecom assets, toggles protection, lists telemetry, and displays alerts. |
+| Security Management Console | Flutter | Operator Atsign using namespace `iotlighthouse` | Imports telecom assets, toggles protection, lists telemetry, and displays alerts. |
 | Device Protection Service | Dart CLI agent | Dedicated trusted Atsign, default `@lyra6dj02_sp` | Maintains registry, receives operator commands, stores traces, and forwards device commands. |
 | IoT Device | Dart/device runtime | `@lyra6dj04_sp` | Represents a 4G/LTE gateway, POS terminal, smart meter, or sensor publishing encrypted telemetry and receiving protection commands. |
 | Device Registry | AtKeys | Service/operator shared keys | Stores device records, current protection state, and import source. |
@@ -17,7 +17,7 @@ IoT Protector is an Atsign Platform application for telecom teams managing prote
 
 ## Namespace
 
-All application data uses the namespace `iotprotector`.
+All application data uses the namespace `iotlighthouse`.
 
 Key names are built in [lib/services/at_keys.dart](lib/services/at_keys.dart). Data is stored as AtKeys and synchronized by the Atsign SDK; application data is not stored in local files.
 
@@ -63,15 +63,15 @@ flowchart LR
 
 | Purpose | Key pattern | Owner/writer | Shared with |
 | --- | --- | --- | --- |
-| Company profile/action envelope | `company.profile.iotprotector@owner` | Console | Device Protection Service |
-| Device registry | `devices.registry.iotprotector@owner` | Console or service | Service/operator as needed |
-| Device record | `device.<deviceId>.record.iotprotector@owner` | Service | Operator |
-| Telemetry reading | `telemetry.<deviceId>.<readingId>.iotprotector@device` | Device | Device Protection Service |
-| Trace log | `trace.<deviceId>.log.iotprotector@service` | Device Protection Service | Operator |
-| Protection command | `command.<deviceId>.protection.iotprotector@service` | Service or monitor | Device or service |
-| Alert feed | `alerts.feed.iotprotector@monitor` | Threat Monitor | Operator/console |
-| Alert detail | `alert.<alertId>.iotprotector@monitor` | Threat Monitor | Operator/console |
-| Agent mutex | `mutex.<requestId>.iotprotector@agent` | Agent instance | Not shared |
+| Company profile/action envelope | `company.profile.iotlighthouse@owner` | Console | Device Protection Service |
+| Device registry | `devices.registry.iotlighthouse@owner` | Console or service | Service/operator as needed |
+| Device record | `device.<deviceId>.record.iotlighthouse@owner` | Service | Operator |
+| Telemetry reading | `telemetry.<deviceId>.<readingId>.iotlighthouse@device` | Device | Device Protection Service |
+| Trace log | `trace.<deviceId>.log.iotlighthouse@service` | Device Protection Service | Operator |
+| Protection command | `command.<deviceId>.protection.iotlighthouse@service` | Service or monitor | Device or service |
+| Alert feed | `alerts.feed.iotlighthouse@monitor` | Threat Monitor | Operator/console |
+| Alert detail | `alert.<alertId>.iotlighthouse@monitor` | Threat Monitor | Operator/console |
+| Agent mutex | `mutex.<requestId>.iotlighthouse@agent` | Agent instance | Not shared |
 
 ## JSON Formats
 
@@ -120,11 +120,12 @@ Security alert:
 
 ## Running
 
-This workspace includes a local Flutter SDK at `.tools/flutter` when installed by Codex. Use:
+This workspace includes a local Flutter SDK at `.tools/flutter` when installed by Codex. For Windows desktop development, use the no-space junction path created at `C:\Users\decke\iot_lighthouse_workspace`; Flutter native assets currently trip over the original `Iot Protector` folder name.
 
 ```powershell
+cd C:\Users\decke\iot_lighthouse_workspace
 .\.tools\flutter\bin\flutter.bat pub get
-.\.tools\flutter\bin\flutter.bat run
+.\.tools\flutter\bin\flutter.bat run -d windows
 ```
 
 Run agents after authenticating the relevant Atsigns with Atsign CLI-compatible key material:

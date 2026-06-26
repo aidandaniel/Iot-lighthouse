@@ -1,5 +1,5 @@
 name: iot_protector
-description: Atsign-powered IoT device protection console and agents.
+description: Atsign-powered telecom device visibility, protection, and traceability console.
 publish_to: "none"
 version: 0.1.0+1
 

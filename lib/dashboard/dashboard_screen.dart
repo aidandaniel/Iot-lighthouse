@@ -1,104 +1,140 @@
-import 'package:at_client/at_client.dart';
 import 'package:flutter/material.dart';
 
 import '../models/device_models.dart';
-import '../services/iot_protector_repository.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({super.key, required this.operatorAtSign});
+
+  final String operatorAtSign;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  late final IotProtectorRepository _repository;
-  List<ProtectedDevice> _devices = [];
-  List<SecurityAlert> _alerts = [];
-  bool _loading = true;
+  final List<ProtectedDevice> _devices = [];
+  final List<SecurityAlert> _alerts = [
+    SecurityAlert(
+      id: 'alert-demo-001',
+      deviceId: 'smart-meter-001',
+      severity: AlertSeverity.critical,
+      title: 'Smart meter firmware fallback detected',
+      assessment:
+          'The meter is using an aging NB-IoT profile with abnormal packet loss. This can indicate weak protocol fallback, SIM misuse, or field tamper.',
+      recommendedFix:
+          'Keep the meter isolated, rotate credentials, verify SIM status, and schedule firmware inspection.',
+      createdAt: DateTime.now().toUtc(),
+    ),
+  ];
+  bool _imported = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _repository = IotProtectorRepository(AtClientManager.getInstance().atClient);
-    _refresh();
-  }
-
-  Future<void> _refresh() async {
-    setState(() => _loading = true);
-    final devices = await _repository.loadDevices();
-    final alerts = await _repository.loadAlerts();
-    if (!mounted) return;
+  void _importDemoFleet() {
     setState(() {
-      _devices = devices;
-      _alerts = alerts;
-      _loading = false;
+      _imported = true;
+      _devices
+        ..clear()
+        ..addAll(_demoDevices);
     });
   }
 
-  Future<void> _addDevice() async {
-    final device = await showDialog<ProtectedDevice>(
-      context: context,
-      builder: (_) => const _AddDeviceDialog(),
-    );
-    if (device == null) return;
-    await _repository.importDevices([device]);
-    await _refresh();
-  }
-
-  Future<void> _toggle(ProtectedDevice device, bool enabled) async {
+  void _toggle(ProtectedDevice device, bool enabled) {
     final state = enabled ? ProtectionState.enabled : ProtectionState.disabled;
-    await _repository.toggleProtection(device, state);
-    await _refresh();
+    setState(() {
+      for (var i = 0; i < _devices.length; i += 1) {
+        if (_devices[i].id == device.id) {
+          _devices[i] = _devices[i].copyWith(protectionState: state);
+        }
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Security Management Console'),
+        title: const Text('IoT Lighthouse Console'),
         actions: [
-          IconButton(
-            onPressed: _refresh,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(child: Text(widget.operatorAtSign)),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addDevice,
-        icon: const Icon(Icons.add),
-        label: const Text('Device'),
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _Summary(devices: _devices, alerts: _alerts),
-                const SizedBox(height: 16),
-                Text('Devices', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
-                for (final device in _devices)
-                  _DeviceTile(device: device, onToggle: _toggle),
-                if (_devices.isEmpty)
-                  const ListTile(
-                    leading: Icon(Icons.sensors_off),
-                    title: Text('No devices imported yet'),
-                    subtitle: Text('Add LTE gateways, POS terminals, smart meters, or sensors.'),
-                  ),
-                const SizedBox(height: 24),
-                Text('Security Alerts', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
-                for (final alert in _alerts) _AlertTile(alert: alert),
-                if (_alerts.isEmpty)
-                  const ListTile(
-                    leading: Icon(Icons.check_circle_outline),
-                    title: Text('No active alerts'),
-                    subtitle: Text('Threat Monitor alerts will appear here.'),
-                  ),
-              ],
+      body: ListView(
+        padding: const EdgeInsets.all(18),
+        children: [
+          _ImportPanel(imported: _imported, onImport: _importDemoFleet),
+          const SizedBox(height: 16),
+          _Summary(devices: _devices, alerts: _alerts),
+          const SizedBox(height: 20),
+          Text('Protected Telecom Assets',
+              style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          if (_devices.isEmpty)
+            const Card(
+              child: ListTile(
+                leading: Icon(Icons.upload_file),
+                title: Text('Import the demo fleet to begin'),
+                subtitle: Text(
+                  'The import assigns one Atsign identity to each 4G/LTE connected device.',
+                ),
+              ),
             ),
+          for (final device in _devices)
+            _DeviceTile(device: device, onToggle: _toggle),
+          const SizedBox(height: 20),
+          Text('Threat Monitor Alerts',
+              style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          for (final alert in _alerts) _AlertTile(alert: alert),
+        ],
+      ),
+    );
+  }
+}
+
+class _ImportPanel extends StatelessWidget {
+  const _ImportPanel({required this.imported, required this.onImport});
+
+  final bool imported;
+  final VoidCallback onImport;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            Icon(imported ? Icons.check_circle : Icons.inventory_2_outlined),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    imported
+                        ? 'Demo fleet imported'
+                        : 'Import telecom IoT devices',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    imported
+                        ? 'Five LTE/4G connected assets now have assigned Atsign identities.'
+                        : 'Load LTE gateways, POS terminals, smart meters, and sensors, then assign each device an Atsign identity.',
+                  ),
+                ],
+              ),
+            ),
+            FilledButton.icon(
+              onPressed: onImport,
+              icon: const Icon(Icons.upload_file),
+              label: Text(imported ? 'Re-import' : 'Import demo fleet'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -114,16 +150,17 @@ class _Summary extends StatelessWidget {
     final protectedCount = devices
         .where((device) => device.protectionState == ProtectionState.enabled)
         .length;
-    final criticalCount = alerts
-        .where((alert) => alert.severity == AlertSeverity.critical)
+    final isolatedCount = devices
+        .where((device) => device.protectionState == ProtectionState.isolated)
         .length;
     return Wrap(
       spacing: 12,
       runSpacing: 12,
       children: [
-        _Metric(label: 'Devices', value: devices.length.toString()),
+        _Metric(label: 'Imported', value: devices.length.toString()),
         _Metric(label: 'Protected', value: protectedCount.toString()),
-        _Metric(label: 'Critical Alerts', value: criticalCount.toString()),
+        _Metric(label: 'Isolated', value: isolatedCount.toString()),
+        _Metric(label: 'Alerts', value: alerts.length.toString()),
       ],
     );
   }
@@ -138,7 +175,7 @@ class _Metric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 180,
+      width: 160,
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -160,20 +197,27 @@ class _DeviceTile extends StatelessWidget {
   const _DeviceTile({required this.device, required this.onToggle});
 
   final ProtectedDevice device;
-  final Future<void> Function(ProtectedDevice device, bool enabled) onToggle;
+  final void Function(ProtectedDevice device, bool enabled) onToggle;
 
   @override
   Widget build(BuildContext context) {
     final enabled = device.protectionState == ProtectionState.enabled;
+    final isolated = device.protectionState == ProtectionState.isolated;
     return Card(
       child: SwitchListTile(
         value: enabled,
-        onChanged: (value) => onToggle(device, value),
+        onChanged: isolated ? null : (value) => onToggle(device, value),
         title: Text(device.label),
         subtitle: Text(
-          '${device.deviceAtSign}  •  ${device.lastReading?.status ?? 'awaiting telemetry'}',
+          '${device.id}  |  ${device.deviceAtSign}  |  ${device.protocol ?? 'lte'}  |  ${device.lastReading?.status ?? 'awaiting telemetry'}',
         ),
-        secondary: Icon(enabled ? Icons.shield : Icons.shield_outlined),
+        secondary: Icon(
+          isolated
+              ? Icons.block
+              : enabled
+                  ? Icons.shield
+                  : Icons.shield_outlined,
+        ),
       ),
     );
   }
@@ -186,14 +230,9 @@ class _AlertTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (alert.severity) {
-      AlertSeverity.critical => Colors.red,
-      AlertSeverity.warning => Colors.orange,
-      AlertSeverity.info => Colors.blue,
-    };
     return Card(
       child: ListTile(
-        leading: Icon(Icons.warning_amber, color: color),
+        leading: const Icon(Icons.warning_amber, color: Colors.red),
         title: Text(alert.title),
         subtitle: Text('${alert.assessment}\nFix: ${alert.recommendedFix}'),
         isThreeLine: true,
@@ -202,85 +241,77 @@ class _AlertTile extends StatelessWidget {
   }
 }
 
-class _AddDeviceDialog extends StatefulWidget {
-  const _AddDeviceDialog();
-
-  @override
-  State<_AddDeviceDialog> createState() => _AddDeviceDialogState();
-}
-
-class _AddDeviceDialogState extends State<_AddDeviceDialog> {
-  final _id = TextEditingController();
-  final _label = TextEditingController();
-  final _atSign = TextEditingController();
-  String _assetType = 'LTE Gateway';
-
-  void _applyPreset(String type) {
-    setState(() {
-      _assetType = type;
-      switch (type) {
-        case 'POS Terminal':
-          _id.text = 'pos-terminal-001';
-          _label.text = 'POS Terminal - Retail Partner 001';
-        case 'Smart Meter':
-          _id.text = 'smart-meter-001';
-          _label.text = 'Smart Meter - District Node 001';
-        case 'Field Sensor':
-          _id.text = 'field-sensor-001';
-          _label.text = 'Field Sensor - Cabinet 001';
-        default:
-          _id.text = 'lte-gateway-001';
-          _label.text = 'LTE Gateway - Tower Sector A';
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Add Device'),
-      content: SizedBox(
-        width: 420,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<String>(
-              initialValue: _assetType,
-              decoration: const InputDecoration(labelText: 'Asset type'),
-              items: const [
-                DropdownMenuItem(value: 'LTE Gateway', child: Text('LTE Gateway')),
-                DropdownMenuItem(value: 'POS Terminal', child: Text('POS Terminal')),
-                DropdownMenuItem(value: 'Smart Meter', child: Text('Smart Meter')),
-                DropdownMenuItem(value: 'Field Sensor', child: Text('Field Sensor')),
-              ],
-              onChanged: (value) {
-                if (value != null) _applyPreset(value);
-              },
-            ),
-            TextField(controller: _id, decoration: const InputDecoration(labelText: 'Device ID')),
-            TextField(controller: _label, decoration: const InputDecoration(labelText: 'Label')),
-            TextField(controller: _atSign, decoration: const InputDecoration(labelText: 'Device Atsign')),
-          ],
+List<ProtectedDevice> get _demoDevices => [
+      ProtectedDevice(
+        id: 'lte-gateway-001',
+        label: 'LTE Gateway - Tower Sector A',
+        deviceAtSign: '@lyra6dj04_sp',
+        protectionState: ProtectionState.enabled,
+        source: 'demo-import:lte-gateway',
+        firmwareVersion: '2.4.1',
+        protocol: 'lte-mqtt',
+        lastSeen: DateTime.now().toUtc(),
+        lastReading: TelemetryReading(
+          deviceId: 'lte-gateway-001',
+          recordedAt: DateTime.now().toUtc(),
+          signalStrength: -58,
+          temperatureC: 41,
+          packetLossPercent: 3,
+          status: 'normal',
         ),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        FilledButton(
-          onPressed: () {
-            Navigator.pop(
-              context,
-              ProtectedDevice(
-                id: _id.text.trim(),
-                label: _label.text.trim(),
-                deviceAtSign: _atSign.text.trim(),
-                protectionState: ProtectionState.disabled,
-                source: 'manual:${_assetType.toLowerCase().replaceAll(' ', '-')}',
-              ),
-            );
-          },
-          child: const Text('Add'),
+      ProtectedDevice(
+        id: 'lte-router-002',
+        label: '4G Router - Rural Backhaul 002',
+        deviceAtSign: '@lyra6dj05_sp',
+        protectionState: ProtectionState.enabled,
+        source: 'demo-import:4g-router',
+        firmwareVersion: '2.2.0',
+        protocol: 'lte-ipsec',
+        lastSeen: DateTime.now().toUtc(),
+        lastReading: TelemetryReading(
+          deviceId: 'lte-router-002',
+          recordedAt: DateTime.now().toUtc(),
+          signalStrength: -64,
+          temperatureC: 47,
+          packetLossPercent: 7,
+          status: 'normal',
         ),
-      ],
-    );
-  }
-}
+      ),
+      const ProtectedDevice(
+        id: 'pos-terminal-001',
+        label: 'POS Terminal - Retail Partner 001',
+        deviceAtSign: '@lyra6dj06_sp',
+        protectionState: ProtectionState.disabled,
+        source: 'demo-import:pos-terminal',
+        firmwareVersion: '1.9.8',
+        protocol: 'lte-pos',
+      ),
+      const ProtectedDevice(
+        id: 'smart-meter-001',
+        label: 'Smart Meter - District Node 001',
+        deviceAtSign: '@lyra6dj07_sp',
+        protectionState: ProtectionState.isolated,
+        source: 'demo-import:smart-meter',
+        firmwareVersion: '3.1.0',
+        protocol: 'nb-iot',
+      ),
+      ProtectedDevice(
+        id: 'field-sensor-001',
+        label: 'Field Sensor - Cabinet 001',
+        deviceAtSign: '@lyra6dj08_sp',
+        protectionState: ProtectionState.enabled,
+        source: 'demo-import:field-sensor',
+        firmwareVersion: '4.0.3',
+        protocol: 'lte-cat-m1',
+        lastSeen: DateTime.now().toUtc(),
+        lastReading: TelemetryReading(
+          deviceId: 'field-sensor-001',
+          recordedAt: DateTime.now().toUtc(),
+          signalStrength: -71,
+          temperatureC: 34,
+          packetLossPercent: 2,
+          status: 'normal',
+        ),
+      ),
+    ];

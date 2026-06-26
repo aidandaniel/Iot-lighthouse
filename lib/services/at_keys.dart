@@ -1,6 +1,6 @@
 import 'package:at_client/at_client.dart';
 
-const appNamespace = 'iotprotector';
+const appNamespace = 'iotlighthouse';
 const protectionServiceAtSign = '@lyra6dj02_sp';
 const threatMonitorAtSign = '@lyra6dj03_sp';
 
