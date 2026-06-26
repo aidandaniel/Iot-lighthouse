@@ -1,16 +1,16 @@
 # IoT Lighthouse
 
-IoT Lighthouse is an Atsign Platform application for telecom teams managing protected connected assets across LTE/4G gateways, POS terminals, smart meters, and field sensors. It includes a Flutter Security Management Console plus Dart agents for the Device Protection Service, Threat Monitor, and an IoT device simulator.
+IoT Lighthouse is an Atsign Platform application for telecom teams managing protected signaling devices and gateways across Diameter and SS7 networks. It includes a Flutter Security Management Console plus Dart agents for the Device Protection Service, Threat Monitor, and a synthetic signaling-device simulator.
 
 ## Nodes And Atsigns
 
 | Node | Runtime | Atsign model | Notes |
 | --- | --- | --- | --- |
 | Telecom Company | AtKeys | Operator-owned Atsign namespace | Company profile, subscription state, and protected asset classes live as encrypted AtKeys. |
-| Telecom Operator | Flutter app user | `@lyra6dj01_sp` | Authenticates with keychain, registrar onboarding, APKAM, or `.atKeys`; manages LTE gateways, POS terminals, smart meters, and sensors. |
-| Security Management Console | Flutter | Operator Atsign using namespace `iotlighthouse` | Imports telecom assets, toggles protection, lists telemetry, and displays alerts. |
+| Telecom Operator | Flutter app user | `@lyra6dj01_sp` | Authenticates with keychain, registrar onboarding, APKAM, or `.atKeys`; manages Diameter and SS7 signaling assets. |
+| Security Management Console | Flutter | Operator Atsign using namespace `iotlighthouse` | Imports signaling devices, toggles protection, lists telemetry, and displays alerts. |
 | Device Protection Service | Dart CLI agent | Dedicated trusted Atsign, default `@lyra6dj02_sp` | Maintains registry, receives operator commands, stores traces, and forwards device commands. |
-| IoT Device | Dart/device runtime | `@lyra6dj04_sp` | Represents a 4G/LTE gateway, POS terminal, smart meter, or sensor publishing encrypted telemetry and receiving protection commands. |
+| IoT Device | Dart/device runtime | `@lyra6dj04_sp` | Represents a Diameter node, SS7 gateway, or adjacent signaling appliance publishing encrypted telemetry and receiving protection commands. |
 | Device Registry | AtKeys | Service/operator shared keys | Stores device records, current protection state, and import source. |
 | Telemetry & Trace Log | AtKeys | Service-owned and shared keys | Stores readings and traceability events per device. |
 | Threat Monitor | Dart CLI agent | Dedicated trusted Atsign, default `@lyra6dj03_sp` | Analyzes telemetry and publishes ranked security alerts. |
@@ -59,6 +59,24 @@ flowchart LR
   Console -->|"request vulnerability report"| Monitor
 ```
 
+## MVP Encryption Proof
+
+The hackathon MVP hardcodes telecom signaling-device specifications so the demo is reliable, but it uses synthetic telemetry to prove the end-to-end privacy flow. When the demo fleet is imported, the app creates a route-specific encrypted telemetry envelope from a Diameter/SS7 device Atsign to the Device Protection Service Atsign:
+
+```text
+@lyra6dj04_sp -> @lyra6dj02_sp
+```
+
+The app shows:
+
+- plaintext synthetic telemetry
+- encrypted payload
+- HMAC digest
+- decrypted payload
+- verification status
+
+This local proof demonstrates the intended security property in the demo. The production Atsign path uses encrypted AtKeys and Atsign notifications with `sharedWith`, so Diameter/SS7 telemetry and protection commands are encrypted for the target Atsign and are not stored in plaintext by a central application backend.
+
 ## Key Table
 
 | Purpose | Key pattern | Owner/writer | Shared with |
@@ -79,13 +97,13 @@ Device record:
 
 ```json
 {
-  "id": "lte-gateway-001",
-  "label": "LTE Gateway - Tower Sector A",
+  "id": "diameter-edge-001",
+  "label": "Diameter Edge Router - Core Site A",
   "deviceAtSign": "@towergateway001",
   "protectionState": "enabled",
   "source": "manual",
   "firmwareVersion": "2.4.1",
-  "protocol": "lte-mqtt",
+  "protocol": "diameter",
   "lastSeen": "2026-06-25T20:00:00.000Z",
   "lastReading": {}
 }
@@ -95,7 +113,7 @@ Telemetry reading:
 
 ```json
 {
-  "deviceId": "lte-gateway-001",
+  "deviceId": "diameter-edge-001",
   "recordedAt": "2026-06-25T20:00:00.000Z",
   "signalStrength": -57.2,
   "temperatureC": 41.5,
@@ -109,11 +127,11 @@ Security alert:
 ```json
 {
   "id": "uuid",
-  "deviceId": "lte-gateway-001",
+  "deviceId": "diameter-edge-001",
   "severity": "critical",
-  "title": "Possible compromise on lte-gateway-001",
-  "assessment": "Plain-language suspected weakness, such as outdated modem firmware, SIM abuse, weak protocol fallback, or physical tamper.",
-  "recommendedFix": "Isolate, rotate credentials, inspect firmware, verify SIM status, and check tower-sector traffic.",
+  "title": "Possible compromise on diameter-edge-001",
+  "assessment": "Plain-language suspected weakness, such as insecure Diameter routing, SS7 fallback exposure, stale firmware, or signaling tamper.",
+  "recommendedFix": "Isolate, rotate credentials, inspect firmware, verify routing policy, and review signaling traffic.",
   "createdAt": "2026-06-25T20:00:00.000Z"
 }
 ```
@@ -133,7 +151,7 @@ Run agents after authenticating the relevant Atsigns with Atsign CLI-compatible 
 ```powershell
 .\.tools\flutter\bin\dart.bat run agents/device_protection_service.dart --atsign @lyra6dj02_sp
 .\.tools\flutter\bin\dart.bat run agents/threat_monitor.dart --atsign @lyra6dj03_sp
-.\.tools\flutter\bin\dart.bat run agents/iot_device_simulator.dart --atsign @lyra6dj04_sp lte-gateway-001
+.\.tools\flutter\bin\dart.bat run agents/iot_device_simulator.dart --atsign @lyra6dj04_sp diameter-edge-001
 ```
 
 The exact CLI flags are handled by `at_cli_commons` `CLIBase`.
@@ -146,7 +164,7 @@ The exact CLI flags are handled by `at_cli_commons` `CLIBase`.
 | Commits inside window | Make final commits between June 25, 2026 12:00 PM PT and June 26, 2026 12:00 PM PT. |
 | Video submitted and under 5 minutes | Suggested structure: problem, AI Architect blueprint, live auth gate/auth flow, add device, toggle protection, show agent alert. |
 | AI Architect Blueprint | `ai_architect_blueprint.json` preserves the submitted blueprint; `README.md` includes the rendered flow diagram. |
-| Real-world usefulness | Telecom fleets include LTE gateways, POS terminals, smart meters, and sensors that face credential theft, weak legacy protocols, SIM abuse, tamper, and traceability gaps; this app targets protected identity, encrypted telemetry, and operator-visible isolation workflows. |
+| Real-world usefulness | Telecom signaling environments include Diameter nodes, SS7 gateways, HSS/HLR proxies, and interconnect appliances that face credential theft, weak legacy protocols, routing abuse, and traceability gaps; this app targets protected identity, encrypted telemetry, and operator-visible isolation workflows. |
 | Technical execution | Uses Atsigns for operators, service agents, threat monitor, and devices; all synchronized application data is modeled as encrypted AtKeys. |
 | Creativity | Combines identity-based IoT protection, traceability, and threat explanations without a central app backend. |
 | Clarity of demo | Target audience: telecom operations and security staff managing distributed field devices. |

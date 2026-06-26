@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'auth/welcome_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,10 +16,7 @@ class IotLighthouseApp extends StatelessWidget {
     return MaterialApp(
       title: 'IoT Lighthouse',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-      ),
+      theme: buildAppTheme(),
       home: const WelcomeScreen(),
     );
   }

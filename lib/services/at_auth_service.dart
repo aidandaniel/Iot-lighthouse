@@ -74,6 +74,28 @@ class AtAuthService {
     });
   }
 
+  Future<void> onboardWithManualCram(BuildContext context) async {
+    await _safe(context, () async {
+      final request = await AtSignSelectionDialog.show(context);
+      if (request == null || !context.mounted) return;
+
+      request.atSign.toAtsign();
+      final cramKey = await _ManualCramDialog.show(context, request.atSign);
+      if (cramKey == null || cramKey.trim().isEmpty || !context.mounted) {
+        return;
+      }
+
+      final response = await CramDialog.show(
+        context,
+        request: request as AtOnboardingRequest,
+        cramKey: cramKey.trim(),
+      );
+      if (response != null && response.isSuccessful && context.mounted) {
+        await setupAtClient(context, request, response);
+      }
+    });
+  }
+
   Future<void> loginWithApkam(BuildContext context) async {
     await _safe(context, () async {
       final request = await AtSignSelectionDialog.show(context);
@@ -194,6 +216,65 @@ class AtAuthService {
   }
 
   void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _ManualCramDialog extends StatefulWidget {
+  const _ManualCramDialog({required this.atSign});
+
+  final String atSign;
+
+  static Future<String?> show(BuildContext context, String atSign) {
+    return showDialog<String>(
+      context: context,
+      builder: (_) => _ManualCramDialog(atSign: atSign),
+    );
+  }
+
+  @override
+  State<_ManualCramDialog> createState() => _ManualCramDialogState();
+}
+
+class _ManualCramDialogState extends State<_ManualCramDialog> {
+  final _controller = TextEditingController();
+  bool _obscure = true;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Activate ${widget.atSign}'),
+      content: TextField(
+        controller: _controller,
+        obscureText: _obscure,
+        decoration: InputDecoration(
+          labelText: 'CRAM key',
+          helperText: 'Paste the key from Advanced Settings.',
+          suffixIcon: IconButton(
+            tooltip: _obscure ? 'Show key' : 'Hide key',
+            onPressed: () => setState(() => _obscure = !_obscure),
+            icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
+          ),
+        ),
+        onSubmitted: (_) => Navigator.of(context).pop(_controller.text),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('Activate'),
+        ),
+      ],
+    );
   }
 }

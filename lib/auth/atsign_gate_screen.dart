@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../theme/app_theme.dart';
+import '../theme/app_widgets.dart';
+
 const starterPackUrl = 'https://my.atsign.com/starterpack_app';
 
 class AtsignGateScreen extends StatelessWidget {
@@ -13,62 +16,129 @@ class AtsignGateScreen extends StatelessWidget {
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Open https://my.atsign.com/starterpack_app')),
+        const SnackBar(
+          content: Text('Open https://my.atsign.com/starterpack_app'),
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Using this app requires an Atsign.',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
+    final theme = Theme.of(context);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        return Scaffold(
+          body: SafeArea(
+            child: AppWindow(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppLayout.horizontalPadding(width),
+                vertical: 32,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight - 64),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const AppAccentRule(height: 3),
+                    const SizedBox(height: 32),
+                    Text(
+                      'An atSign is required',
+                      style: theme.textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'IoT Lighthouse uses atSign identities for operators and devices. '
+                      'If you already have one, continue to sign in.',
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 28),
+                    ResponsiveColumns(
+                      breakpoint: 900,
+                      gap: 32,
+                      flex: const [1, 1],
+                      children: [
+                        AppPanel(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Get a Starter Pack',
+                                style: theme.textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: 10),
+                              const _Step(
+                                n: '1',
+                                text: 'Open the Starter Pack link below',
+                              ),
+                              const _Step(
+                                n: '2',
+                                text: 'Enter and verify your email',
+                              ),
+                              const _Step(
+                                n: '3',
+                                text: 'Return here and tap Continue',
+                              ),
+                            ],
+                          ),
                         ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'If you already have an Atsign, click "Continue."\n\n'
-                    'Or, get free, temporary Atsigns via the Starter Pack:\n'
-                    '1. Click "Get My Starter Pack" below or visit $starterPackUrl in your browser.\n'
-                    '2. Enter your email address.\n'
-                    '3. Verify your email with a one-time passcode.\n'
-                    '4. Come back to the app and click "Continue."',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.45),
-                  ),
-                  const SizedBox(height: 28),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      FilledButton.icon(
-                        onPressed: () => _openStarterPack(context),
-                        icon: const Icon(Icons.open_in_browser),
-                        label: const Text('Get My Starter Pack'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: onContinue,
-                        icon: const Icon(Icons.arrow_forward),
-                        label: const Text('Continue'),
-                      ),
-                    ],
-                  ),
-                ],
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            FilledButton(
+                              onPressed: () => _openStarterPack(context),
+                              child: const Text('Get Starter Pack'),
+                            ),
+                            const SizedBox(height: 10),
+                            OutlinedButton(
+                              onPressed: onContinue,
+                              child: const Text('Continue'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
+        );
+      },
+    );
+  }
+}
+
+class _Step extends StatelessWidget {
+  const _Step({required this.n, required this.text});
+
+  final String n;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            n,
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.gray800,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
+          ),
+        ],
       ),
     );
   }

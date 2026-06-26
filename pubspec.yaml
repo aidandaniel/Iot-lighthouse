@@ -15,8 +15,10 @@ dependencies:
   at_cli_commons: ^3.0.1
   at_commons: ^5.0.0
   at_utils: ^3.0.19
+  crypto: ^3.0.7
   file_picker: ^11.0.2
   path_provider: ^2.1.4
+  google_fonts: ^6.2.1
   url_launcher: ^6.3.0
   uuid: ^4.5.1
 
