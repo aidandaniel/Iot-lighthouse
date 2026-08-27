@@ -30,24 +30,8 @@ abstract final class AppColors {
     colors: [black, gray600],
   );
 
-  /// Legacy aliases used across the app.
-  static const ink = black;
-  static const navy = white;
-  static const fog = black;
   static const mist = gray800;
-  static const steel = gray200;
-  static const void_ = black;
-  static const slate = white;
-  static const cream = black;
-  static const tan = gray800;
-  static const brown = gray200;
-  static const offWhite = gray100;
-  static const cobalt = Color(0xFF0055FF);
-  static const cobaltLight = Color(0xFF00AAFF);
-  static const wine = white;
-  static const crimson = gray200;
   static const ruby = Color(0xFFE63946);
-  static const peach = Color(0xFFF4A261);
   static const emerald = Color(0xFF2A9D8F);
 }
 
