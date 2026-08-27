@@ -105,7 +105,7 @@ Security alert:
   "deviceId": "diameter-edge-001",
   "severity": "critical",
   "title": "Possible compromise on diameter-edge-001",
-  "assessment": "Plain-language suspected weakness, such as insecure Diameter routing, SS7 fallback exposure, stale firmware, or signaling tamper.",
+  "assessment": "Suspected weakness such as insecure Diameter routing, SS7 fallback exposure, stale firmware, or tampering.",
   "recommendedFix": "Isolate, rotate credentials, inspect firmware, verify routing policy, and review signaling traffic.",
   "createdAt": "2026-06-25T20:00:00.000Z"
 }
