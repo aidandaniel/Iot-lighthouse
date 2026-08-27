@@ -12,8 +12,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Using this app requires an Atsign.'), findsOneWidget);
-    expect(find.text('Get My Starter Pack'), findsOneWidget);
+    expect(find.text('An atSign is required'), findsOneWidget);
+    expect(find.text('Get Starter Pack'), findsOneWidget);
 
     await tester.tap(find.text('Continue'));
     await tester.pump();

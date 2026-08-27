@@ -1,46 +1,23 @@
 # IoT Lighthouse
 
-IoT Lighthouse is an Atsign Platform application for telecom teams managing protected signaling devices and gateways across Diameter and SS7 networks. It includes a Flutter Security Management Console plus Dart agents for the Device Protection Service, Threat Monitor, and a synthetic signaling-device simulator.
+IoT Lighthouse is an [Atsign](https://atsign.com) platform app for telecom teams that protect Diameter nodes, SS7 gateways, and adjacent signaling appliances. It assigns a cryptographic atSign to each operator, service agent, and device, then moves telemetry and isolation commands as encrypted AtKeys — with no central application backend.
 
-## Nodes And Atsigns
+Atsign’s write-up: [How IoT Lighthouse Secures Legacy Telecom Networks at the Identity Layer](https://www.atsign.com/articles/iot-lighthouse-telecom-identity-security). The project placed 2nd at the [AI Architect Hackathon](https://www.atsign.com/articles/celebrating-the-atsign-ai-architect-hackathon-winners).
 
-| Node | Runtime | Atsign model | Notes |
+This repository is the Flutter Security Management Console plus Dart agents for the Device Protection Service, Threat Monitor, and a signaling-device simulator.
+
+## Architecture
+
+Four identities share the namespace `iotlighthouse` and coordinate through atServers instead of a cloud app database:
+
+| Identity | Runtime | Default atSign | Role |
 | --- | --- | --- | --- |
-| Telecom Company | AtKeys | Operator-owned Atsign namespace | Company profile, subscription state, and protected asset classes live as encrypted AtKeys. |
-| Telecom Operator | Flutter app user | `@lyra6dj01_sp` | Authenticates with keychain, registrar onboarding, APKAM, or `.atKeys`; manages Diameter and SS7 signaling assets. |
-| Security Management Console | Flutter | Operator Atsign using namespace `iotlighthouse` | Imports signaling devices, toggles protection, lists telemetry, and displays alerts. |
-| Device Protection Service | Dart CLI agent | Dedicated trusted Atsign, default `@lyra6dj02_sp` | Maintains registry, receives operator commands, stores traces, and forwards device commands. |
-| IoT Device | Dart/device runtime | `@lyra6dj04_sp` | Represents a Diameter node, SS7 gateway, or adjacent signaling appliance publishing encrypted telemetry and receiving protection commands. |
-| Device Registry | AtKeys | Service/operator shared keys | Stores device records, current protection state, and import source. |
-| Telemetry & Trace Log | AtKeys | Service-owned and shared keys | Stores readings and traceability events per device. |
-| Threat Monitor | Dart CLI agent | Dedicated trusted Atsign, default `@lyra6dj03_sp` | Analyzes telemetry and publishes ranked security alerts. |
+| Telecom operator | Flutter console | `@lyra6dj01_sp` | Imports the demo fleet, toggles protection, reviews telemetry and alerts |
+| Device Protection Service | Dart CLI agent | `@lyra6dj02_sp` | Registry, traces, and protection-command routing |
+| Threat Monitor | Dart CLI agent | `@lyra6dj03_sp` | Scores telemetry and publishes ranked alerts |
+| Signaling device | Dart simulator | `@lyra6dj04_sp` (and `@lyra6dj05_sp`–`@lyra6dj08_sp` in the demo fleet) | Publishes encrypted telemetry; receives protection commands |
 
-## Namespace
-
-All application data uses the namespace `iotlighthouse`.
-
-Key names are built in [lib/services/at_keys.dart](lib/services/at_keys.dart). Data is stored as AtKeys and synchronized by the Atsign SDK; application data is not stored in local files.
-
-## First-Run Atsign Gate
-
-The console starts at [lib/main.dart](lib/main.dart). On launch it calls `KeychainStorage().getAllAtsigns()`. If no Atsigns exist on the device, it blocks access with [lib/auth/atsign_gate_screen.dart](lib/auth/atsign_gate_screen.dart). The user can open the Starter Pack URL, then press Continue to reach the auth screen.
-
-Starter Pack URL: https://my.atsign.com/starterpack_app
-
-## Authentication Workflows
-
-[lib/auth/welcome_screen.dart](lib/auth/welcome_screen.dart) exposes all required auth paths through [lib/services/at_auth_service.dart](lib/services/at_auth_service.dart):
-
-| Workflow | Implementation |
-| --- | --- |
-| Login from Keychain | `KeychainStorage().getAllAtsigns()` -> `AtSignSelectionDialog.show(existingAtSigns: ...)` -> `AtAuthRequest(... KeychainAtKeysIo())` -> `PkamDialog.show()` |
-| Onboard a New Atsign | `AtSignSelectionDialog.show()` -> `RegistrarCramDialog.show()` with `RegistrarService(registrarUrl: 'my.atsign.com', apiKey: ...)` -> `CramDialog.show()` |
-| APKAM enrollment | `AtSignSelectionDialog.show()` -> `ApkamActivationDialog.show()` -> `AtAuthRequest(... atAuthKeys: ...)` -> `PkamDialog.show()` |
-| Login via `.atKeys` file | `AtKeysFileDialog.show()` -> `FileAtKeysIo.getAtsign()` -> `AtAuthRequest(... atKeysIo: ...)` -> `PkamDialog.show(backupKeys: [KeychainAtKeysIo()])` |
-
-All Atsign strings are validated with `.toAtsign()` before use.
-
-## Data Flows
+The submitted [AI Architect](https://aiarchitect.atsign.com/) blueprint is in [`ai_architect_blueprint.json`](ai_architect_blueprint.json).
 
 ```mermaid
 flowchart LR
@@ -59,49 +36,47 @@ flowchart LR
   Console -->|"request vulnerability report"| Monitor
 ```
 
-## MVP Encryption Proof
+Atsign construction lives in [`lib/services/at_keys.dart`](lib/services/at_keys.dart). Platform SDK rules are in [`ATPLATFORM_GUIDELINES.md`](ATPLATFORM_GUIDELINES.md).
 
-The hackathon MVP hardcodes telecom signaling-device specifications so the demo is reliable, but it uses synthetic telemetry to prove the end-to-end privacy flow. When the demo fleet is imported, the app creates a route-specific encrypted telemetry envelope from a Diameter/SS7 device Atsign to the Device Protection Service Atsign:
+## Encryption
+
+Operational records are AtKeys in namespace `iotlighthouse`, shared with `sharedWith` so only the intended atSign can decrypt them. There is no application server that stores plaintext telemetry.
+
+The console can run a live AtKey round-trip for the Diameter edge demo device: authenticate the device `.atKeys`, write shared telemetry, authenticate the company atSign, then read and decrypt. That proof uses this route:
 
 ```text
-@lyra6dj04_sp -> @lyra6dj02_sp
+@lyra6dj04_sp -> @lyra6dj01_sp
 ```
 
-The app shows:
+Implementation: [`lib/services/real_atsign_telemetry.dart`](lib/services/real_atsign_telemetry.dart). The traceability view shows the route, AtKey name, plaintext, decrypted value, and verification status.
 
-- plaintext synthetic telemetry
-- encrypted payload
-- HMAC digest
-- decrypted payload
-- verification status
+## Key conventions
 
-This local proof demonstrates the intended security property in the demo. The production Atsign path uses encrypted AtKeys and Atsign notifications with `sharedWith`, so Diameter/SS7 telemetry and protection commands are encrypted for the target Atsign and are not stored in plaintext by a central application backend.
-
-## Key Table
-
-| Purpose | Key pattern | Owner/writer | Shared with |
+| Purpose | Key pattern | Writer | Shared with |
 | --- | --- | --- | --- |
-| Company profile/action envelope | `company.profile.iotlighthouse@owner` | Console | Device Protection Service |
-| Device registry | `devices.registry.iotlighthouse@owner` | Console or service | Service/operator as needed |
+| Company profile / action envelope | `company.profile.iotlighthouse@owner` | Console | Device Protection Service |
+| Device registry | `devices.registry.iotlighthouse@owner` | Console or service | Service / operator |
 | Device record | `device.<deviceId>.record.iotlighthouse@owner` | Service | Operator |
 | Telemetry reading | `telemetry.<deviceId>.<readingId>.iotlighthouse@device` | Device | Device Protection Service |
 | Trace log | `trace.<deviceId>.log.iotlighthouse@service` | Device Protection Service | Operator |
 | Protection command | `command.<deviceId>.protection.iotlighthouse@service` | Service or monitor | Device or service |
-| Alert feed | `alerts.feed.iotlighthouse@monitor` | Threat Monitor | Operator/console |
-| Alert detail | `alert.<alertId>.iotlighthouse@monitor` | Threat Monitor | Operator/console |
+| Alert feed | `alerts.feed.iotlighthouse@monitor` | Threat Monitor | Operator / console |
+| Alert detail | `alert.<alertId>.iotlighthouse@monitor` | Threat Monitor | Operator / console |
 | Agent mutex | `mutex.<requestId>.iotlighthouse@agent` | Agent instance | Not shared |
 
-## JSON Formats
+Need an atSign? [Starter Pack](https://my.atsign.com/starterpack_app). The console activates demo identities from the dashboard (keychain, manual CRAM, APKAM, or a `.atKeys` file). Helpers are in [`lib/services/at_auth_service.dart`](lib/services/at_auth_service.dart). Validate every atSign with `.toAtsign()` before use.
 
-Device record:
+## Payload shapes
+
+Device record ([`lib/models/device_models.dart`](lib/models/device_models.dart)):
 
 ```json
 {
   "id": "diameter-edge-001",
   "label": "Diameter Edge Router - Core Site A",
-  "deviceAtSign": "@towergateway001",
+  "deviceAtSign": "@lyra6dj04_sp",
   "protectionState": "enabled",
-  "source": "manual",
+  "source": "demo-import:diameter-node",
   "firmwareVersion": "2.4.1",
   "protocol": "diameter",
   "lastSeen": "2026-06-25T20:00:00.000Z",
@@ -138,34 +113,25 @@ Security alert:
 
 ## Running
 
-This workspace includes a local Flutter SDK at `.tools/flutter` when installed by Codex. For Windows desktop development, use the no-space junction path created at `C:\Users\decke\iot_lighthouse_workspace`; Flutter native assets currently trip over the original `Iot Protector` folder name.
+Requires a current [Flutter](https://docs.flutter.dev/get-started/install) SDK on `PATH`.
 
 ```powershell
-cd C:\Users\decke\iot_lighthouse_workspace
-.\.tools\flutter\bin\flutter.bat pub get
-.\.tools\flutter\bin\flutter.bat run -d windows
+flutter pub get
+flutter run -d windows
 ```
 
-Run agents after authenticating the relevant Atsigns with Atsign CLI-compatible key material:
+On Windows, a workspace path that contains spaces (this folder is named `Iot Protector`) can break Flutter native-asset builds. If that happens, run from a junction or clone path with no spaces.
+
+Start agents after the matching atSigns are authenticated (`at_cli_commons` `CLIBase` supplies the flags):
 
 ```powershell
-.\.tools\flutter\bin\dart.bat run agents/device_protection_service.dart --atsign @lyra6dj02_sp
-.\.tools\flutter\bin\dart.bat run agents/threat_monitor.dart --atsign @lyra6dj03_sp
-.\.tools\flutter\bin\dart.bat run agents/iot_device_simulator.dart --atsign @lyra6dj04_sp diameter-edge-001
+dart run agents/device_protection_service.dart --atsign @lyra6dj02_sp
+dart run agents/threat_monitor.dart --atsign @lyra6dj03_sp
+dart run agents/iot_device_simulator.dart --atsign @lyra6dj04_sp diameter-edge-001
 ```
 
-The exact CLI flags are handled by `at_cli_commons` `CLIBase`.
+Do not commit `.atKeys` or registrar API keys. Pass a registrar key with `--dart-define=ATSIGN_REGISTRAR_API_KEY=...` when using registrar onboarding.
 
-## Hackathon Submission Checklist
+## Archive
 
-| Judging item | Project evidence |
-| --- | --- |
-| Repository link submitted | Submit this repository URL after pushing the final commit. |
-| Commits inside window | Make final commits between June 25, 2026 12:00 PM PT and June 26, 2026 12:00 PM PT. |
-| Video submitted and under 5 minutes | Suggested structure: problem, AI Architect blueprint, live auth gate/auth flow, add device, toggle protection, show agent alert. |
-| AI Architect Blueprint | `ai_architect_blueprint.json` preserves the submitted blueprint; `README.md` includes the rendered flow diagram. |
-| Real-world usefulness | Telecom signaling environments include Diameter nodes, SS7 gateways, HSS/HLR proxies, and interconnect appliances that face credential theft, weak legacy protocols, routing abuse, and traceability gaps; this app targets protected identity, encrypted telemetry, and operator-visible isolation workflows. |
-| Technical execution | Uses Atsigns for operators, service agents, threat monitor, and devices; all synchronized application data is modeled as encrypted AtKeys. |
-| Creativity | Combines identity-based IoT protection, traceability, and threat explanations without a central app backend. |
-| Clarity of demo | Target audience: telecom operations and security staff managing distributed field devices. |
-| Completeness | Includes Flutter console, first-run Atsign gate, four auth workflows, platform permissions, service agent, threat monitor, simulator, docs, and extensible key conventions. |
+The June 2026 hackathon README is preserved at [`docs/archive/README-hackathon-2026-06.md`](docs/archive/README-hackathon-2026-06.md).

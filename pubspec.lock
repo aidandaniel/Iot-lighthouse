@@ -82,7 +82,7 @@ packages:
     source: hosted
     version: "1.1.3"
   at_commons:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: at_commons
       sha256: "3deadcb1f1e0e25550ebc638524a09450f61cfc580db6f50b538f58f787077ac"
@@ -138,7 +138,7 @@ packages:
     source: hosted
     version: "1.0.0"
   at_utils:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: at_utils
       sha256: e974616a816e9f6f3b186f33efea823f345d193b6ea9b42f08d28f35848c4de1
@@ -242,7 +242,7 @@ packages:
     source: hosted
     version: "0.3.5+2"
   crypto:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: crypto
       sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf

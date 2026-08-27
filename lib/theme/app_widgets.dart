@@ -22,7 +22,6 @@ abstract final class AppLayout {
         32,
       );
 
-  static bool isCompact(double width) => width < 768;
   static bool isWide(double width) => width >= 1100;
   static bool isUltraWide(double width) => width >= 1400;
 
@@ -266,37 +265,6 @@ class OperatorChip extends StatelessWidget {
           color: AppColors.text,
           letterSpacing: 0.2,
         ),
-      ),
-    );
-  }
-}
-
-class MetricTile extends StatelessWidget {
-  const MetricTile({super.key, required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label.toUpperCase(),
-            style: Theme.of(context).textTheme.labelSmall,
-          ),
-          const SizedBox(height: 8),
-          Text(value, style: Theme.of(context).textTheme.headlineMedium),
-        ],
       ),
     );
   }
